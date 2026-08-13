@@ -1,228 +1,124 @@
-# Diagrammo Slate
+# Diagrammo Slate Plus
 
-An Obsidian theme built on the **Slate** palette from
-[diagrammo.app/palette](https://diagrammo.app/palette/) — a cool-gray ground, a
-confident corporate blue, a muted teal accent, and a nine-hue categorical
-spectrum tuned to a single perceived weight.
+一款基于 **Diagrammo Slate**（by Demian Neidetcher）扩展的 Obsidian 主题。
 
-Slate was designed so no series shouts. This theme takes that even-weight
-spectrum and spends all of it: headings, callouts, tags, folders, syntax, task
-states, graph nodes and canvas all carry hue, and none of it fights.
+冷灰石板底色 + 沉稳的企业蓝主色 + 柔和青绿强调色，外加一套九色分类光谱——标题、标签、文件夹、语法高亮、任务、图谱节点都带色相。Plus 版本在此基础上修复了新版 Obsidian 的 Canvas 配色问题，并参考 **Maple** 主题的设置体系，加入了 50 个可配置项（中英双语标签）。
 
-Light and dark are both first-class — the palette ships distinct values for
-each, not one set with opacity tricks.
+> 需要 **Obsidian 1.13.0+**。深度自定义请安装 [Style Settings](https://github.com/mgmeyers/obsidian-style-settings) 插件（不装也能正常使用主题默认效果）。
 
-![Diagrammo Slate in light and dark](screenshot.png)
+---
 
-## Palette
+## 安装
 
-| Role | Light | Dark |
+1. 将本文件夹（`Diagrammo Slate Plus`）放入仓库的 `.obsidian/themes/` 目录
+2. Obsidian → 设置 → 外观 → 主题 → 选择 **Diagrammo Slate Plus**
+3. （可选）安装并启用 Style Settings 插件，在 设置 → Style Settings → Diagrammo Slate Plus 中调节
+
+---
+
+## 设计语言
+
+- **光谱色阶**：H1–H6 标题、列表嵌套、引用嵌套、文件夹嵌套共用一套按深度循环的色阶，层级一眼可辨
+- **半透明渲染（Wash）**：标题色带、标签胶囊、列表圆点光晕等所有半透明色块统一由 `color-mix` 生成，一个"色彩渲染强度"滑杆全局调节，设 0 即全部素净
+- **深度色阶文件夹**：文件管理器按嵌套深度给文件夹着色，子树成块阅读
+- **Callout 保持 Obsidian 默认**：本主题不改动 Callout 样式，光谱预算花在别处
+
+---
+
+## 相对原版 Diagrammo Slate 的改动
+
+1. **Canvas 修复**：Obsidian 1.13 起核心改用完整颜色 + `color-mix` 消费 `--canvas-color-N`，旧版"RGB 三元组"写法导致彩色卡片边框与底色失效；本主题输出完整颜色，配色恢复正常
+2. **主色 / 强调色 HSL 管道**：色相滑杆可调，全部半透明渲染迁移到 `color-mix`，换色后全局一致
+3. **Style Settings 设置体系**：色彩、布局、字体排印、引言、表格、图片、阴影、白板八大分区，双语标签
+4. **Maple 式引用卡片**：圆角面板 + 内嵌引用条 / 大引号，配色保留 Slate 深度色阶，条宽与上下内边距可调
+5. **表格三风格**：经典网格（可选斑马纹子样式）、财报线条（仅水平细线 + 开闭粗线），圆角可调
+6. **侧栏悬停统一**：所有侧栏面板悬停只加背景、不改文字颜色与字重
+7. **图片相框**：边框开关 + 细线 / 虚线 / 点线 / 卡片留白四种样式 + 悬浮阴影
+8. **统一悬浮阴影**：一组"大小 / 强度"滑杆同时调节代码块、图片、引言卡片的所有可开启阴影
+
+---
+
+## Style Settings 配置一览
+
+### 色彩 Color
+
+| 配置项 | 类型 | 说明 |
 | --- | --- | --- |
-| Background | `#ffffff` | `#161b22` |
-| Surface | `#f3f5f8` | `#202833` |
-| Overlay | `#eaeef3` | `#29323e` |
-| Border | `#d4dae1` | `#38424f` |
-| Text | `#1f2933` | `#e6eaef` |
-| Muted | `#5b6672` | `#9aa5b1` |
-| Primary | `#3b6ea5` | `#5b9bd5` |
-| Accent | `#3a9188` | `#45b3a3` |
+| 主色色相 | 滑杆 | 企业蓝色相，链接 / 激活态 / 界面强调，明暗模式同时生效 |
+| 强调色色相 | 滑杆 | 青绿强调色相，高亮 / 引用 / 次级状态 |
+| 色彩渲染强度 | 滑杆 | 所有半透明色块的统一倍率，0 = 全部去除 |
+| 素净标题 / 去标题色带 / 素净文件夹 / 素净标签 / 素净分割线 / 素净加粗斜体 | 开关 | 逐项关闭光谱效果 |
+| 色盲友好色阶 | 开关 | 光谱换用 Okabe-Ito 色盲安全配色 |
 
-| Spectrum | Light | Dark |
+### 布局 Layout
+
+| 配置项 | 类型 | 说明 |
 | --- | --- | --- |
-| Red | `#c0504d` | `#e07b6e` |
-| Orange | `#cc7a33` | `#e0975a` |
-| Yellow | `#c9a227` | `#d9bd5a` |
-| Green | `#5b9357` | `#74b56e` |
-| Blue | `#3b6ea5` | `#5b9bd5` |
-| Purple | `#7d5ba6` | `#a585c9` |
-| Teal | `#3a9188` | `#45b3a3` |
-| Cyan | `#4f96c4` | `#62b0d9` |
-| Gray | `#7e8a97` | `#95a1ae` |
+| 顶栏显示笔记标题 / 行内标题 / 文件夹面包屑 | 开关 | 视图标题三件套 |
+| 行宽 | 滑杆 | 可读行宽（em） |
+| 标题上间距 | 滑杆 | 标题前的呼吸空间 |
+| 动画 | 下拉 | 默认 / 禁用动画 |
 
-**Every color in this theme is one of the thirty values above, verbatim.**
-Nothing is darkened, lightened or shifted to make a role work. Where a color
-doesn't work for a job, a different palette color takes the job.
+### 字体排印 Typography
 
-The one consequence: yellow never carries ink on the light ground. `#c9a227`
-lands at 2.4:1 on white, under the 3:1 floor even for large text, so it is
-absent from headings, tags, folder depths, callout titles and task markers.
-It keeps every job where it is a fill rather than a foreground — highlight
-background, canvas color 3, the `--color-yellow` slot plugins read.
+| 配置项 | 类型 | 说明 |
+| --- | --- | --- |
+| 无衬线正文 | 开关 | 正文切换为无衬线 |
+| 界面 / 正文 / 等宽字体 | 文本 | 自定义字体族 |
+| 正文字号 / 行高 / 段落间距 / 代码字号 / 加粗字重 | 滑杆 | 排印微调 |
+| 代码块风格 | 下拉 | 默认（中性面板 + 紫色侧条）/ 终端（深色控制台）/ 素净 / 蓝图（随主色）/ macOS 窗口（红绿灯标题栏，右侧显示语言名、点击复制） |
+| 代码块悬浮阴影 | 开关 | 叠加统一悬浮阴影 |
 
-Opacity is used for washes, borders and hover states. That is compositing a
-palette color against a palette background, not a new value.
+### 引言块 Blockquote
 
-## What is colored
+| 配置项 | 类型 | 说明 |
+| --- | --- | --- |
+| 引用条宽度 | 滑杆 | 左侧彩色引用条宽度（px） |
+| 引言上下内边距 | 滑杆 | 卡片内部上下呼吸（em） |
+| 引言卡片风格 | 下拉 | 阴影 / 边框（同色系描边）/ 素净 |
+| 大引号样式 | 开关 | 用大号 `“` 替代引用条 |
+| 斜体引言 | 开关 | 阅读视图 + 实时预览 |
 
-- **Headings** — H1–H6 walk red → orange → green → teal → blue → purple, warm
-  to cool. Each sits on a rounded block washed in its own hue, stepping down in
-  strength as the level descends: H1 at 12% through H6 at 5%. No underlines —
-  the block, the hue and the size already encode level three times over, and a
-  rule on top of a rounded block fights the radius. The outline pane mirrors
-  the ladder.
-- **Callouts** — every built-in type maps to a spectrum hue:
-  note/info/todo blue, tip teal, success green, question cyan, warning orange,
-  failure/danger red, example purple, summary/quote gray.
-- **Tags** — hued by first character across eight buckets, stepping through the
-  spectrum and wrapping every eighth letter (`a`/`i`/`q`/`y` → red, `b`/`j`/`r`
-  /`z` → orange, and so on; digits → gray). CSS can't hash a string, so this is
-  the closest deterministic approximation. Live preview has no tag name in the
-  DOM, so tags there take the teal accent pill.
-- **Folders** — file-explorer folders tint by nesting depth on the same
-  red → orange → green → teal → blue → purple ladder, six levels deep,
-  with a matching left rule on the children container. Files inherit their
-  folder's hue at reduced strength, so each subtree reads as one block of
-  color while the folder still leads on weight. Files at the vault root fall
-  back to the muted ink.
-- **Syntax** — keywords red, strings green, functions purple, properties cyan,
-  values teal, operators orange. Inline code is purple ink on a purple wash;
-  fenced blocks sit on the neutral panel with a purple spine.
-- **Tasks** — `[>]` blue, `[!]` orange, `[?]` cyan, `[*]` purple, `[-]` red and
-  struck through. Only a real `[x]` dims.
-- **Mermaid** — flowchart nodes primary, sequence actors accent, class and
-  state diagrams purple, ER teal, notes gold, edges gray. Mindmap and gantt
-  sections walk the rotation. Mermaid scopes its injected styles by diagram id,
-  so this is the one section of the theme that requires `!important`. Label
-  color is set across the whole subtree rather than per diagram type: mermaid
-  renders some labels as SVG `<text>` and others as HTML in a `<foreignObject>`,
-  and which is used moves between versions.
-- **Graph & canvas** — nodes blue, focused orange, tags teal, attachments
-  purple, unresolved red. Canvas colors 1–6 map to the spectrum.
-- **Nesting** — list bullets, nested blockquotes and live-preview indentation
-  guides all walk the same six-step ladder the file explorer and the headings
-  use, so depth reads identically whichever structure you are looking at.
-  Both reading view and live preview get the full ladder — live preview list
-  lines and quote lines carry their depth as a class, and indentation guides
-  are colored per level on top of that. Bullets run at `0.5em` with a halo of
-  their own hue at 18%, since the stock `0.3em` dot is too small to carry a
-  color.
-- **Links by target** — note links blue, heading links cyan, block references
-  purple, attachments and canvases teal, external purple, unresolved red.
-- **Inline detail** — inline title blue, math teal, footnote refs
-  and backrefs teal, block IDs purple, markdown comments gray italic, active
-  line number blue, fold arrows orange, matching brackets teal.
-- **Workspace** — tab and sidebar icons take a hue per view type: markdown
-  blue, canvas purple, PDF red, media green, graph teal, bases and explorer
-  orange, search cyan, bookmarks red, outline green, backlinks purple. Result
-  counts render as tinted pills.
-- **Chrome** — the ribbon rail and pane action icons take a hue by position,
-  rotating through the spectrum and wrapping every eighth, so a rail of any
-  length stays evenly spread. There is no attribute saying what a ribbon button
-  does — the label is plugin-supplied and localized — so position is the only
-  stable key. Every other `.clickable-icon` shares one state ladder: muted
-  idle, primary on hover, accent when active. Tab close goes red on hover, the pane drop target primary, context
-  menu items primary on hover and red when destructive. Tooltips and toasts sit
-  on the overlay surface, the settings nav and plugin browser take the primary,
-  and empty panes get a primary call to action.
+### 表格 Table
 
-The ladder used for headings, folder depth, list depth and quote depth is one
-sequence: **red → orange → green → teal → blue → purple**. Yellow, cyan and
-gray sit outside it and carry other jobs.
+| 配置项 | 类型 | 说明 |
+| --- | --- | --- |
+| 表格圆角 | 滑杆 | 0 = 直角 |
+| 表格风格 | 下拉 | 经典网格 / 经典网格·斑马纹 / 财报线条 |
 
-## Opinions
+### 图片 Images
 
-The theme takes a few positions beyond color, each reversible from Style
-Settings:
+| 配置项 | 类型 | 说明 |
+| --- | --- | --- |
+| 图片边框 | 开关 | 为嵌入图片加框 |
+| 图片边框样式 | 下拉 | 细线 / 虚线 / 点线 / 卡片留白 |
+| 图片悬浮阴影 | 开关 | 叠加统一悬浮阴影 |
 
-- **The note's name appears once**, on its tab. Obsidian states it three times
-  by default — tab, view header, inline title — before a word of content
-  appears. The view header keeps its nav buttons and actions; only the title
-  and its breadcrumb chain go.
-- **No small caps**, anywhere.
-- **No heading underlines.** Level is already carried by hue, wash strength and
-  type size.
+### 悬浮阴影 Floating Shadow
 
-## Print, motion and color vision
+| 配置项 | 类型 | 说明 |
+| --- | --- | --- |
+| 阴影大小 | 滑杆 | 模糊半径（px），抬升量按比例联动 |
+| 阴影强度 | 滑杆 | 不透明度倍率，叠在明暗模式基准之上 |
 
-Print and PDF export drop every wash — a 12% tint reads as color on screen but
-prints as a gray band — while keeping hue on the ink itself, which is what
-carries the structure. `prefers-reduced-motion` is honored.
+### 白板 Canvas
 
-The default ladder puts red at level 1 and green at level 3, the hardest pair
-to separate under deuteranopia and protanopia. Level is also encoded by wash
-strength and type size, so the ladder is rarely the only signal — but where it
-is (folder depth, bullets), the **Colorblind-safe ladder** toggle reorders it
-to lead with blue and orange.
+| 配置项 | 类型 | 说明 |
+| --- | --- | --- |
+| 自动隐藏控制按钮 | 开关 | 悬停时才显示白板控件 |
+| 失焦卡片文本居中 | 开关 | 未选中的文本卡片居中显示 |
+| 背景点阵透明度 | 滑杆 | 白板点阵背景浓度 |
 
-## Typography
+---
 
-System fonts only — nothing is downloaded.
+## 兼容性说明
 
-- Interface: Inter → system sans
-- Body: Iowan Old Style → Charter → Palatino → Georgia
-- Code: JetBrains Mono → SF Mono → IBM Plex Mono → Menlo
+- **Obsidian 版本**：`minAppVersion 1.13.0`。1.13 之前的版本 Canvas 彩色卡片可能仍异常
+- **Callout**：刻意保持 Obsidian 默认样式，未做任何覆盖
+- **macOS 代码窗口**：完整标题栏效果在阅读视图；实时预览受 CodeMirror 行结构限制，仅保留简化边框
+- **行内小图**：开启图片边框后，行内小尺寸图片也会带框
 
-Measure is `42rem`, body line height `1.7`, headings tracked at `-0.018em`.
+## 致谢
 
-> If you have set **Font** under Appearance in Obsidian, your setting wins over
-> the theme's. Clear the Text font field to get the serif reading face.
-
-## Install
-
-> **Saw this as "Slate" briefly?** 1.1.0 and 1.1.1 shortened the name; the
-> community directory does not allow a theme to be renamed, so 1.1.2 puts it
-> back to **Diagrammo Slate**. Nothing to do — installs and Style Settings
-> toggles were never keyed to the short name.
-
-### From the community list
-
-In Obsidian, go to Settings → Appearance → Themes → **Manage**, search for
-**Diagrammo Slate**, and click Install and use.
-
-### With BRAT
-
-Add `demian0311/obsidian-slate` as a beta theme in
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) to track `main` ahead of
-the released version.
-
-### Manually
-
-Copy `theme.css` and `manifest.json` into
-`<vault>/.obsidian/themes/Diagrammo Slate/`, then pick the theme under
-Settings → Appearance.
-
-## Customizing
-
-The theme ships a [Style Settings](https://github.com/mgmeyers/obsidian-style-settings)
-block. Everything colorful is **on by default** and the toggles turn things
-*off*, so the theme looks the same with or without the plugin installed:
-
-- Colorblind-safe ladder — reorder depth to lead with blue and orange
-- Show note title in the view header — restore the name next to the nav buttons
-- Show inline title — restore the large note name atop the note body
-- Show folder breadcrumbs — restore the folder path (needs the header title)
-- Plain headings — drop the H1–H6 spectrum ladder
-- No heading tint — drop the block wash behind headings
-- Plain folders — neutral file explorer
-- Plain tags — all tags take the teal accent
-- Plain horizontal rules — hairline instead of the spectrum gradient
-- Plain bold & italic — uncolored emphasis
-- Sans-serif body — interface sans for note text
-- Line width — the readable measure, default `42rem`
-- Space above headings — the gap before a heading, default `2.75rem`. It sits
-  outside the tint, so raising it never grows the colored band
-
-## Development
-
-`theme.css` is hand-written, no build step.
-
-For live editing, the working copy has to live where Obsidian's file watcher
-can see it. Obsidian does not follow a symlink out of `.obsidian/themes/`, so
-symlinking the repo *into* a vault gives you a theme that loads once and never
-hot-reloads. Put the real files in the vault and symlink back out instead:
-
-```sh
-git clone <repo> "<vault>/.obsidian/themes/Diagrammo Slate"
-ln -s "<vault>/.obsidian/themes/Diagrammo Slate" ~/code/obsidian-slate
-```
-
-Now saving `theme.css` reloads the theme immediately. `Cmd+R` forces a reload
-if the watcher misses a change.
-
-## Credits
-
-Palette: the `slate` palette from [Diagrammo](https://diagrammo.app).
-
-## License
-
-MIT
+- 原版主题：**Diagrammo Slate** by Demian Neidetcher（[neidetcher.com](https://neidetcher.com)），调色板源自 [Diagrammo](https://diagrammo.app/palette/)
+- 设置体系与引用 / 表格造型参考 **Maple** 主题（by subframe7536）

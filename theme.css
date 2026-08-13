@@ -1,108 +1,573 @@
 /* ============================================================================
-   Diagrammo Slate — an Obsidian theme
-   Port of the "Slate" palette from https://diagrammo.app/palette/
+   Diagrammo Slate Plus — an Obsidian theme
+   Based on Diagrammo Slate by Demian Neidetcher
+   (port of the "Slate" palette from https://diagrammo.app/palette/)
 
    A cool-gray slate ground with a confident corporate blue, a muted teal
    accent, and a nine-hue categorical spectrum tuned to a single perceived
-   weight. This theme spends that spectrum aggressively: headings, callouts,
-   tags, folders, syntax, tasks and graph nodes all carry hue.
+   weight. This theme spends that spectrum aggressively: headings, tags,
+   folders, syntax, tasks and graph nodes all carry hue. Callouts stay on
+   Obsidian's own defaults.
+
+   Plus 版本的改动：
+   1. 修复 Canvas：Obsidian 1.13 起核心样式改用完整颜色 + color-mix 消费
+      --canvas-color-N，旧版「RGB 三元组」写法会使彩色卡片的边框与底色
+      失效。本主题改为输出完整颜色，卡片配色恢复正常。
+   2. 主色/强调色改为 HSL 管道，可通过 Style Settings 调节色相；所有半透明
+      渲染统一迁移到 color-mix，自定义颜色时全局保持一致。
+   3. 参考 Maple 主题的 Style Settings 体系扩展设置项（双语标题）：色彩、
+      布局、字体排印、引言、白板等分区。
+   4. 引用块采用 Maple 卡片式造型（圆角面板 + 内嵌引用条 / 大引号），配色
+      保留 Slate 深度色阶，引用条宽度与上下内边距可调。
+   5. 表格支持圆角滑杆与财报线条风格（仅水平细线）；斑马纹作为经典风格的
+      子选项，财报风格下不提供。
+   6. 侧栏悬停全局统一为“只加背景、不改文字”；嵌入图片支持边框开关、
+      细线/虚线/点线/卡片留白样式与悬浮阴影。
+   7. 悬浮阴影统一为一组令牌：大小与强度滑杆同时调节代码块、图片与
+      引言卡片的所有可开启阴影。
    ========================================================================= */
 
 /* @settings
 
-name: Diagrammo Slate
-id: diagrammo-slate
+name: Diagrammo Slate Plus
+id: diagrammo-slate-plus
 settings:
   -
     id: slate-color-heading
     title: Color
+    title.zh: 色彩
     type: heading
     level: 1
     collapsed: false
   -
+    id: ds-primary-hue
+    title: Primary Hue
+    title.zh: 主色色相
+    description: Hue of the corporate blue used for links, active states and UI accents. Applies to both light and dark mode.
+    description.zh: 链接、激活状态和界面强调色所用的蓝色色相，浅色/深色模式同时生效。
+    type: variable-number-slider
+    default: 211
+    min: 0
+    max: 360
+    step: 1
+  -
+    id: ds-accent-hue
+    title: Accent Hue
+    title.zh: 强调色色相
+    description: Hue of the teal accent used for highlights, blockquotes and secondary states.
+    description.zh: 高亮、引用块和次级状态所用的青绿色色相。
+    type: variable-number-slider
+    default: 174
+    min: 0
+    max: 360
+    step: 1
+  -
+    id: ds-wash-scale
+    title: Color Wash Intensity
+    title.zh: 色彩渲染强度
+    description: Multiplier for every translucent wash (heading tints, tag pills, bullet halos). 0 removes all washes.
+    description.zh: 所有半透明色块的统一倍率（标题色带、标签胶囊、列表圆点光晕）。设为 0 可去除全部色块。
+    type: variable-number-slider
+    default: 1
+    min: 0
+    max: 2
+    step: 0.1
+  -
     id: slate-plain-headings
     title: Plain headings
+    title.zh: 素净标题
     description: Turn off the H1–H6 spectrum ladder; headings use the body ink.
+    description.zh: 关闭 H1–H6 光谱色阶，标题使用正文墨色。
     type: class-toggle
     default: false
   -
     id: slate-plain-heading-tint
     title: No heading tint
+    title.zh: 去掉标题色带
     description: Remove the fading background wash behind each heading.
+    description.zh: 移除每个标题背后的渐隐背景色带。
     type: class-toggle
     default: false
   -
     id: slate-plain-folders
     title: Plain folders
+    title.zh: 素净文件夹
     description: Turn off file-explorer folder tinting by nesting depth.
+    description.zh: 关闭文件管理器按嵌套深度着色的文件夹色调。
     type: class-toggle
     default: false
   -
     id: slate-plain-tags
     title: Plain tags
+    title.zh: 素净标签
     description: Turn off per-tag hues; all tags use the teal accent.
+    description.zh: 关闭按标签首字母着色，所有标签统一使用青绿强调色。
     type: class-toggle
     default: false
   -
     id: slate-plain-rule
     title: Plain horizontal rules
+    title.zh: 素净分割线
     description: Render --- as a hairline instead of a spectrum gradient.
+    description.zh: 将 --- 渲染为细线而非光谱渐变。
     type: class-toggle
     default: false
   -
     id: slate-plain-emphasis
     title: Plain bold & italic
+    title.zh: 素净加粗与斜体
     description: Turn off colored emphasis; bold and italic use the body ink.
-    type: class-toggle
-    default: false
-  -
-    id: slate-show-view-header-title
-    title: Show note title in the view header
-    description: Restore the note name above the note, next to the nav buttons.
-    type: class-toggle
-    default: false
-  -
-    id: slate-show-inline-title
-    title: Show inline title
-    description: Restore the large note name at the top of the note body.
-    type: class-toggle
-    default: false
-  -
-    id: slate-show-breadcrumbs
-    title: Show folder breadcrumbs
-    description: Restore the truncated folder path (needs the view header title).
+    description.zh: 关闭强调色，加粗和斜体使用正文墨色。
     type: class-toggle
     default: false
   -
     id: slate-cvd-ladder
     title: Colorblind-safe ladder
+    title.zh: 色盲友好色阶
     description: Reorder the depth ladder to lead with blue and orange instead of red and green.
+    description.zh: 将深度色阶改为蓝橙开头，避免红绿相邻难以区分。
     type: class-toggle
     default: false
   -
+    id: slate-layout-heading
+    title: Layout
+    title.zh: 布局
+    type: heading
+    level: 1
+    collapsed: false
+  -
+    id: slate-show-view-header-title
+    title: Show note title in the view header
+    title.zh: 在视图顶栏显示笔记标题
+    description: Restore the note name above the note, next to the nav buttons.
+    description.zh: 在导航按钮旁恢复笔记名称显示。
+    type: class-toggle
+    default: false
+  -
+    id: slate-show-inline-title
+    title: Show inline title
+    title.zh: 显示行内标题
+    description: Restore the large note name at the top of the note body.
+    description.zh: 在正文顶部恢复大号笔记名称。
+    type: class-toggle
+    default: false
+  -
+    id: slate-show-breadcrumbs
+    title: Show folder breadcrumbs
+    title.zh: 显示文件夹面包屑
+    description: Restore the truncated folder path (needs the view header title).
+    description.zh: 恢复被截断的文件夹路径（需要同时开启视图顶栏标题）。
+    type: class-toggle
+    default: false
+  -
+    id: ds-line-width
+    title: Line Width
+    title.zh: 行宽
+    description: Readable measure for note content, in rem.
+    description.zh: 正文内容的可读行宽，单位 rem。
+    type: variable-number-slider
+    default: 42
+    min: 30
+    max: 60
+    step: 1
+    format: rem
+  -
+    id: ds-heading-space
+    title: Space Above Headings
+    title.zh: 标题上间距
+    description: Gap before a heading, in rem. Sits outside the tint, so the colored band stays the height of the text.
+    description.zh: 标题前的间距，单位 rem。位于色带之外，色带高度保持与文字一致。
+    type: variable-number-slider
+    default: 2.75
+    min: 1
+    max: 5
+    step: 0.25
+    format: rem
+  -
+    id: ds-anim
+    title: Animation
+    title.zh: 动画
+    description: Turn off all interface animations.
+    description.zh: 可关闭全部界面动画。
+    type: class-select
+    allow-empty: false
+    default: ds-anim-default
+    options:
+      -
+        label: Default
+        label.zh: 默认
+        value: ds-anim-default
+      -
+        label: Disable animations
+        label.zh: 禁用动画
+        value: ds-anim-off
+  -
     id: slate-typography-heading
     title: Typography
+    title.zh: 字体排印
     type: heading
     level: 1
     collapsed: false
   -
     id: slate-sans-body
     title: Sans-serif body
+    title.zh: 无衬线正文
     description: Use the interface sans for note body text instead of the serif.
+    description.zh: 正文使用界面无衬线字体替代衬线字体。
     type: class-toggle
     default: false
   -
-    id: slate-line-width
-    title: Line width
-    description: Readable measure for note content.
+    id: ds-font-interface
+    title: Interface Font
+    title.zh: 界面字体
+    description: Any CSS "font-family" value. Leave empty to use the theme default.
+    description.zh: 任何 CSS "font-family" 值。留空使用主题默认字体。
     type: variable-text
-    default: 42rem
+    default: ""
   -
-    id: slate-heading-space
-    title: Space above headings
-    description: Gap before a heading. Sits outside the tint, so the colored band stays the height of the text.
+    id: ds-font-text
+    title: Text Font
+    title.zh: 正文字体
+    description: Any CSS "font-family" value. Leave empty to use the theme default.
+    description.zh: 任何 CSS "font-family" 值。留空使用主题默认字体。
     type: variable-text
-    default: 2.75rem
+    default: ""
+  -
+    id: ds-font-mono
+    title: Monospace Font
+    title.zh: 等宽字体
+    description: Any CSS "font-family" value. Leave empty to use the theme default.
+    description.zh: 任何 CSS "font-family" 值。留空使用主题默认字体。
+    type: variable-text
+    default: ""
+  -
+    id: ds-font-size
+    title: Text Font Size
+    title.zh: 正文字号
+    description: Base font size of note content, in px.
+    description.zh: 正文基础字号，单位 px。
+    type: variable-number-slider
+    default: 16
+    min: 14
+    max: 20
+    step: 1
+    format: px
+  -
+    id: ds-line-height
+    title: Line Height
+    title.zh: 正文行高
+    description: Line height of note body text.
+    description.zh: 正文行高倍数。
+    type: variable-number-slider
+    default: 1.7
+    min: 1.4
+    max: 2
+    step: 0.05
+  -
+    id: ds-p-spacing
+    title: Paragraph Spacing
+    title.zh: 段落间距
+    description: Gap between paragraphs, in rem.
+    description.zh: 段落之间的间距，单位 rem。
+    type: variable-number-slider
+    default: 1.1
+    min: 0.5
+    max: 2
+    step: 0.1
+    format: rem
+  -
+    id: ds-code-size
+    title: Code Font Size
+    title.zh: 代码字号
+    description: Font size of inline code and code blocks, in px.
+    description.zh: 行内代码与代码块的字号，单位 px。
+    type: variable-number-slider
+    default: 14
+    min: 12
+    max: 18
+    step: 1
+    format: px
+  -
+    id: ds-code-style
+    title: Code Block Style
+    title.zh: 代码块风格
+    description: Visual style of fenced code blocks. Inline code is not affected.
+    description.zh: 围栏代码块的视觉风格，行内代码不受影响。
+    type: class-select
+    allow-empty: false
+    default: ds-code-default
+    options:
+      -
+        label: Default (panel + purple rule)
+        label.zh: 默认（中性面板 + 紫色侧条）
+        value: ds-code-default
+      -
+        label: Terminal (dark console)
+        label.zh: 终端（深色控制台）
+        value: ds-code-terminal
+      -
+        label: Minimal (borderless wash)
+        label.zh: 素净（无边框淡底）
+        value: ds-code-minimal
+      -
+        label: Blueprint (primary tint)
+        label.zh: 蓝图（主色调染色）
+        value: ds-code-blueprint
+      -
+        label: macOS Window (traffic lights)
+        label.zh: macOS 窗口（红绿灯标题栏）
+        value: ds-code-macos
+  -
+    id: ds-code-float
+    title: Floating Code Blocks
+    title.zh: 代码块悬浮阴影
+    description: Give fenced code blocks a soft drop shadow so they hover slightly above the page. Applies to reading view.
+    description.zh: 为围栏代码块添加柔和投影，呈现轻微悬浮感。作用于阅读视图。
+    type: class-toggle
+    default: false
+  -
+    id: ds-bold-weight
+    title: Bold Weight
+    title.zh: 加粗字重
+    description: Font weight used for bold text.
+    description.zh: 加粗文本所用的字重。
+    type: variable-number-slider
+    default: 650
+    min: 500
+    max: 800
+    step: 10
+  -
+    id: ds-quote-heading
+    title: Blockquote
+    title.zh: 引言块
+    description: Maple-style quote cards, colored by the Slate depth ladder.
+    description.zh: Maple 风格的引言卡片，配色跟随 Slate 深度色阶。
+    type: heading
+    level: 1
+    collapsed: false
+  -
+    id: ds-quote-bar
+    title: Quote Bar Width
+    title.zh: 引用条宽度
+    description: Width of the colored bar on the left of a quote, in px.
+    description.zh: 引言块左侧彩色引用条的宽度，单位 px。
+    type: variable-number-slider
+    default: 4
+    min: 2
+    max: 8
+    step: 1
+    format: px
+  -
+    id: ds-quote-pad-y
+    title: Quote Vertical Padding
+    title.zh: 引言上下内边距
+    description: Vertical padding inside a quote card, in em.
+    description.zh: 引言卡片内部的上下边距，单位 em。
+    type: variable-number-slider
+    default: 0.45
+    min: 0
+    max: 1.5
+    step: 0.05
+  -
+    id: ds-quote-style
+    title: Quote Card Style
+    title.zh: 引言卡片风格
+    description: Outline treatment of quote cards in reading view.
+    description.zh: 阅读视图中引言卡片的外框处理。
+    type: class-select
+    allow-empty: false
+    default: ds-quote-shadow
+    options:
+      -
+        label: Shadow
+        label.zh: 阴影
+        value: ds-quote-shadow
+      -
+        label: Border
+        label.zh: 边框
+        value: ds-quote-border
+      -
+        label: Plain
+        label.zh: 素净
+        value: ds-quote-plain
+  -
+    id: ds-quote-mark
+    title: Quote Mark
+    title.zh: 大引号样式
+    description: Replace the left bar with a big opening quote mark in reading view.
+    description.zh: 阅读视图中用大号开引号替代左侧引用条。
+    type: class-toggle
+    default: false
+  -
+    id: ds-quote-italic
+    title: Italic Quotes
+    title.zh: 斜体引言
+    description: Render quote text in italic.
+    description.zh: 引言文字使用斜体。
+    type: class-toggle
+    default: false
+  -
+    id: ds-table-heading
+    title: Table
+    title.zh: 表格
+    description: Corner radius and table styles; zebra stripes live inside the style picker.
+    description.zh: 圆角与表格风格；斑马纹作为风格的子选项。
+    type: heading
+    level: 1
+    collapsed: false
+  -
+    id: ds-table-radius
+    title: Table Corner Radius
+    title.zh: 表格圆角
+    description: Corner radius of tables in reading view, in px. 0 for square.
+    description.zh: 阅读视图中表格的圆角大小，单位 px，0 为直角。
+    type: variable-number-slider
+    default: 8
+    min: 0
+    max: 16
+    step: 1
+    format: px
+  -
+    id: ds-table-style
+    title: Table Style
+    title.zh: 表格风格
+    description: Outline treatment of tables in reading view. Zebra striping is a sub-style of Classic; the Finance style has no stripes.
+    description.zh: 阅读视图中表格的线条处理。斑马纹是经典风格的子选项，财报风格下不可用。
+    type: class-select
+    allow-empty: false
+    default: ds-table-classic
+    options:
+      -
+        label: Classic
+        label.zh: 经典网格
+        value: ds-table-classic
+      -
+        label: Classic + Zebra
+        label.zh: 经典网格 · 斑马纹
+        value: ds-table-zebra
+      -
+        label: Finance
+        label.zh: 财报线条
+        value: ds-table-finance
+  -
+    id: ds-img-heading
+    title: Images
+    title.zh: 图片
+    description: Optional border, frame style and floating shadow for embedded images.
+    description.zh: 嵌入图片的可选边框、相框样式与悬浮阴影。
+    type: heading
+    level: 1
+    collapsed: false
+  -
+    id: ds-img-border
+    title: Image Border
+    title.zh: 图片边框
+    description: Draw a hairline border around embedded images.
+    description.zh: 为嵌入图片添加细线边框。
+    type: class-toggle
+    default: false
+  -
+    id: ds-img-style
+    title: Image Frame Style
+    title.zh: 图片边框样式
+    description: Frame treatment while the border is on.
+    description.zh: 边框开启时的相框处理。
+    type: class-select
+    allow-empty: false
+    default: ds-img-line
+    options:
+      -
+        label: Hairline
+        label.zh: 细线
+        value: ds-img-line
+      -
+        label: Dashed
+        label.zh: 虚线
+        value: ds-img-dashed
+      -
+        label: Dotted
+        label.zh: 点线
+        value: ds-img-dotted
+      -
+        label: Matted Card
+        label.zh: 卡片留白
+        value: ds-img-card
+  -
+    id: ds-img-float
+    title: Floating Images
+    title.zh: 图片悬浮阴影
+    description: Give images a soft drop shadow so they hover above the page.
+    description.zh: 为图片添加柔和投影，呈现轻微悬浮感。
+    type: class-toggle
+    default: false
+  -
+    id: ds-shadow-heading
+    title: Floating Shadow
+    title.zh: 悬浮阴影
+    description: One pair of sliders tunes every opt-in shadow — code blocks, images and quote cards.
+    description.zh: 一组滑杆统一调节所有可开启的阴影——代码块、图片与引言卡片。
+    type: heading
+    level: 1
+    collapsed: false
+  -
+    id: ds-shadow-size
+    title: Shadow Size
+    title.zh: 阴影大小
+    description: Blur radius of the floating shadow, in px.
+    description.zh: 悬浮阴影的模糊半径，单位 px。
+    type: variable-number-slider
+    default: 22
+    min: 0
+    max: 48
+    step: 1
+    format: px
+  -
+    id: ds-shadow-strength
+    title: Shadow Strength
+    title.zh: 阴影强度
+    description: Opacity multiplier on top of the theme's mode-based shadow strength.
+    description.zh: 在主题明暗基准之上的阴影不透明度倍率。
+    type: variable-number-slider
+    default: 1
+    min: 0
+    max: 2
+    step: 0.05
+  -
+    id: ds-canvas-heading
+    title: Canvas
+    title.zh: 白板
+    description: Canvas card colors follow the Slate spectrum automatically; borders and fills render on Obsidian 1.13+.
+    description.zh: 白板卡片配色自动跟随 Slate 光谱；边框与底色在 Obsidian 1.13+ 正常渲染。
+    type: heading
+    level: 1
+    collapsed: false
+  -
+    id: ds-canvas-controls-hover
+    title: Auto-hide Canvas Controls
+    title.zh: 自动隐藏白板控制按钮
+    description: Hide the zoom control buttons until hovered.
+    description.zh: 隐藏右上角缩放控制按钮，鼠标移入时显示。
+    type: class-toggle
+    default: false
+  -
+    id: ds-canvas-center-text
+    title: Center Text in Unfocused Cards
+    title.zh: 失焦卡片文本居中
+    description: Center card text when the card is not focused.
+    description.zh: 卡片失去焦点时居中文本。
+    type: class-toggle
+    default: false
+  -
+    id: ds-canvas-dot-opacity
+    title: Background Dot Pattern Opacity
+    title.zh: 背景点阵透明度
+    description: Opacity of the dot grid on the canvas background.
+    description.zh: 白板背景点阵图案的透明度。
+    type: variable-number-slider
+    default: 0.28
+    min: 0
+    max: 1
+    step: 0.02
 
 */
 
@@ -111,134 +576,140 @@ settings:
    ------------------------------------------------------------------------ */
 
 .theme-light {
-  /* ground */
-  --sl-bg-rgb: 255, 255, 255;
-  --sl-surface-rgb: 243, 245, 248;
-  --sl-overlay-rgb: 234, 238, 243;
-  --sl-border-rgb: 212, 218, 225;
-  --sl-text-rgb: 31, 41, 51;
-  --sl-muted-rgb: 91, 102, 114;
+	/* ground */
+	--sl-bg-rgb: 255, 255, 255;
+	--sl-surface-rgb: 243, 245, 248;
+	--sl-overlay-rgb: 234, 238, 243;
+	--sl-border-rgb: 212, 218, 225;
+	--sl-text-rgb: 31, 41, 51;
+	--sl-muted-rgb: 91, 102, 114;
 
-  /* roles */
-  --sl-primary-rgb: 59, 110, 165;
-  --sl-accent-rgb: 58, 145, 136;
+	/* roles. Primary and accent run on an HSL pipeline so Style Settings can
+     swing the hue; every translucent mix downstream is a color-mix over the
+     full color, so a custom hue stays consistent everywhere. Saturation and
+     lightness stay per-mode: the same hue reads differently on each ground. */
+	--sl-primary: hsl(var(--ds-primary-hue, 211), 47%, 44%);
+	--sl-accent: hsl(var(--ds-accent-hue, 174), 43%, 40%);
+	/* Obsidian 1.13 keeps an HSL triplet for legacy interactive surfaces. */
+	--color-accent-hsl: var(--ds-primary-hue, 211), 47%, 44%;
 
-  /* spectrum */
-  --sl-red-rgb: 192, 80, 77;
-  --sl-orange-rgb: 204, 122, 51;
-  --sl-yellow-rgb: 201, 162, 39;
-  --sl-green-rgb: 91, 147, 87;
-  --sl-blue-rgb: 59, 110, 165;
-  --sl-purple-rgb: 125, 91, 166;
-  --sl-teal-rgb: 58, 145, 136;
-  --sl-cyan-rgb: 79, 150, 196;
-  --sl-gray-rgb: 126, 138, 151;
+	/* spectrum */
+	--sl-red-rgb: 192, 80, 77;
+	--sl-orange-rgb: 204, 122, 51;
+	--sl-yellow-rgb: 201, 162, 39;
+	--sl-green-rgb: 91, 147, 87;
+	--sl-blue-rgb: 59, 110, 165;
+	--sl-purple-rgb: 125, 91, 166;
+	--sl-teal-rgb: 58, 145, 136;
+	--sl-cyan-rgb: 79, 150, 196;
+	--sl-gray-rgb: 126, 138, 151;
 
-  /* fills and washes. Every alpha the theme uses lives here rather than at its
+	/* fills and washes. Every alpha the theme uses lives here rather than at its
      point of use, so the dark ground can carry its own values. Color at a low
      alpha reads weaker against #161b22 than against white, so the dark set
      runs roughly 1.4x throughout. */
-  --sl-wash: 0.1;
-  --sl-wash-strong: 0.18;
-  --slate-tint-1: 0.12;
-  --slate-tint-2: 0.10;
-  --slate-tint-3: 0.09;
-  --slate-tint-4: 0.07;
-  --slate-tint-5: 0.06;
-  --slate-tint-6: 0.05;
-  --slate-halo: 0.18;
-  --slate-file-alpha: 0.75;
-  --slate-quote-wash: 0.06;
-  --slate-guide-alpha: 0.35;
-  --slate-rule-alpha: 0.3;
-  --sl-shadow-color: 31, 41, 51;
-  --sl-shadow-strength: 0.09;
-  color-scheme: light;
+	--sl-wash: calc(0.1 * var(--ds-wash-scale, 1));
+	--sl-wash-strong: calc(0.18 * var(--ds-wash-scale, 1));
+	--slate-tint-1: calc(0.12 * var(--ds-wash-scale, 1));
+	--slate-tint-2: calc(0.1 * var(--ds-wash-scale, 1));
+	--slate-tint-3: calc(0.09 * var(--ds-wash-scale, 1));
+	--slate-tint-4: calc(0.07 * var(--ds-wash-scale, 1));
+	--slate-tint-5: calc(0.06 * var(--ds-wash-scale, 1));
+	--slate-tint-6: calc(0.05 * var(--ds-wash-scale, 1));
+	--slate-halo: calc(0.18 * var(--ds-wash-scale, 1));
+	--slate-file-alpha: 0.75;
+	--slate-quote-wash: calc(0.06 * var(--ds-wash-scale, 1));
+	--slate-guide-alpha: 0.35;
+	--slate-rule-alpha: 0.3;
+	--sl-shadow-color: 31, 41, 51;
+	--sl-shadow-strength: 0.09;
+	color-scheme: light;
 }
 
 .theme-dark {
-  /* ground */
-  --sl-bg-rgb: 22, 27, 34;
-  --sl-surface-rgb: 32, 40, 51;
-  --sl-overlay-rgb: 41, 50, 62;
-  --sl-border-rgb: 56, 66, 79;
-  --sl-text-rgb: 230, 234, 239;
-  --sl-muted-rgb: 154, 165, 177;
+	/* ground */
+	--sl-bg-rgb: 22, 27, 34;
+	--sl-surface-rgb: 32, 40, 51;
+	--sl-overlay-rgb: 41, 50, 62;
+	--sl-border-rgb: 56, 66, 79;
+	--sl-text-rgb: 230, 234, 239;
+	--sl-muted-rgb: 154, 165, 177;
 
-  /* roles */
-  --sl-primary-rgb: 91, 155, 213;
-  --sl-accent-rgb: 69, 179, 163;
+	/* roles — same HSL pipeline, dark-ground saturation and lightness. */
+	--sl-primary: hsl(var(--ds-primary-hue, 211), 59%, 60%);
+	--sl-accent: hsl(var(--ds-accent-hue, 174), 44%, 49%);
+	--color-accent-hsl: var(--ds-primary-hue, 211), 59%, 60%;
 
-  /* spectrum */
-  --sl-red-rgb: 224, 123, 110;
-  --sl-orange-rgb: 224, 151, 90;
-  --sl-yellow-rgb: 217, 189, 90;
-  --sl-green-rgb: 116, 181, 110;
-  --sl-blue-rgb: 91, 155, 213;
-  --sl-purple-rgb: 165, 133, 201;
-  --sl-teal-rgb: 69, 179, 163;
-  --sl-cyan-rgb: 98, 176, 217;
-  --sl-gray-rgb: 149, 161, 174;
+	/* spectrum */
+	--sl-red-rgb: 224, 123, 110;
+	--sl-orange-rgb: 224, 151, 90;
+	--sl-yellow-rgb: 217, 189, 90;
+	--sl-green-rgb: 116, 181, 110;
+	--sl-blue-rgb: 91, 155, 213;
+	--sl-purple-rgb: 165, 133, 201;
+	--sl-teal-rgb: 69, 179, 163;
+	--sl-cyan-rgb: 98, 176, 217;
+	--sl-gray-rgb: 149, 161, 174;
 
-  --sl-wash: 0.14;
-  --sl-wash-strong: 0.24;
-  --slate-tint-1: 0.18;
-  --slate-tint-2: 0.16;
-  --slate-tint-3: 0.14;
-  --slate-tint-4: 0.12;
-  --slate-tint-5: 0.10;
-  --slate-tint-6: 0.08;
-  --slate-halo: 0.24;
-  --slate-file-alpha: 0.82;
-  --slate-quote-wash: 0.10;
-  --slate-guide-alpha: 0.45;
-  --slate-rule-alpha: 0.4;
-  --sl-shadow-color: var(--sl-bg-rgb);
-  --sl-shadow-strength: 0.4;
-  color-scheme: dark;
+	--sl-wash: calc(0.14 * var(--ds-wash-scale, 1));
+	--sl-wash-strong: calc(0.24 * var(--ds-wash-scale, 1));
+	--slate-tint-1: calc(0.18 * var(--ds-wash-scale, 1));
+	--slate-tint-2: calc(0.16 * var(--ds-wash-scale, 1));
+	--slate-tint-3: calc(0.14 * var(--ds-wash-scale, 1));
+	--slate-tint-4: calc(0.12 * var(--ds-wash-scale, 1));
+	--slate-tint-5: calc(0.1 * var(--ds-wash-scale, 1));
+	--slate-tint-6: calc(0.08 * var(--ds-wash-scale, 1));
+	--slate-halo: calc(0.24 * var(--ds-wash-scale, 1));
+	--slate-file-alpha: 0.82;
+	--slate-quote-wash: calc(0.1 * var(--ds-wash-scale, 1));
+	--slate-guide-alpha: 0.45;
+	--slate-rule-alpha: 0.4;
+	--sl-shadow-color: var(--sl-bg-rgb);
+	--sl-shadow-strength: 0.4;
+	color-scheme: dark;
 }
 
 body {
-  --sl-bg: rgb(var(--sl-bg-rgb));
-  --sl-surface: rgb(var(--sl-surface-rgb));
-  --sl-overlay: rgb(var(--sl-overlay-rgb));
-  --sl-border: rgb(var(--sl-border-rgb));
-  --sl-text: rgb(var(--sl-text-rgb));
-  --sl-muted: rgb(var(--sl-muted-rgb));
-  --sl-primary: rgb(var(--sl-primary-rgb));
-  --sl-accent: rgb(var(--sl-accent-rgb));
+	--sl-bg: rgb(var(--sl-bg-rgb));
+	--sl-surface: rgb(var(--sl-surface-rgb));
+	--sl-overlay: rgb(var(--sl-overlay-rgb));
+	--sl-border: rgb(var(--sl-border-rgb));
+	--sl-text: rgb(var(--sl-text-rgb));
+	--sl-muted: rgb(var(--sl-muted-rgb));
+	/* --sl-primary / --sl-accent are defined per mode in .theme-light /
+     .theme-dark so the hue sliders can carry different defaults nowhere. */
 
-  --sl-red: rgb(var(--sl-red-rgb));
-  --sl-orange: rgb(var(--sl-orange-rgb));
-  --sl-yellow: rgb(var(--sl-yellow-rgb));
-  --sl-green: rgb(var(--sl-green-rgb));
-  --sl-blue: rgb(var(--sl-blue-rgb));
-  --sl-purple: rgb(var(--sl-purple-rgb));
-  --sl-teal: rgb(var(--sl-teal-rgb));
-  --sl-cyan: rgb(var(--sl-cyan-rgb));
-  --sl-gray: rgb(var(--sl-gray-rgb));
+	--sl-red: rgb(var(--sl-red-rgb));
+	--sl-orange: rgb(var(--sl-orange-rgb));
+	--sl-yellow: rgb(var(--sl-yellow-rgb));
+	--sl-green: rgb(var(--sl-green-rgb));
+	--sl-blue: rgb(var(--sl-blue-rgb));
+	--sl-purple: rgb(var(--sl-purple-rgb));
+	--sl-teal: rgb(var(--sl-teal-rgb));
+	--sl-cyan: rgb(var(--sl-cyan-rgb));
+	--sl-gray: rgb(var(--sl-gray-rgb));
 
-  /* The ladder: one warm-to-cool sequence shared by heading level, folder
+	/* The ladder: one warm-to-cool sequence shared by heading level, folder
      depth, list depth and quote depth, so nesting reads the same everywhere.
      Yellow is absent because it cannot carry ink on the light ground. */
-  --slate-depth-1: var(--sl-red-rgb);
-  --slate-depth-2: var(--sl-orange-rgb);
-  --slate-depth-3: var(--sl-green-rgb);
-  --slate-depth-4: var(--sl-teal-rgb);
-  --slate-depth-5: var(--sl-blue-rgb);
-  --slate-depth-6: var(--sl-purple-rgb);
+	--slate-depth-1: var(--sl-red);
+	--slate-depth-2: var(--sl-orange);
+	--slate-depth-3: var(--sl-green);
+	--slate-depth-4: var(--sl-teal);
+	--slate-depth-5: var(--sl-blue);
+	--slate-depth-6: var(--sl-purple);
 
-  /* The rotation: the full spectrum minus yellow, used wherever a set of peers
+	/* The rotation: the full spectrum minus yellow, used wherever a set of peers
      needs distinct hues with no inherent order — tags by name, icons by
      position. Eight steps so it wraps cleanly on 8n+k. */
-  --slate-rot-1: var(--sl-red-rgb);
-  --slate-rot-2: var(--sl-orange-rgb);
-  --slate-rot-3: var(--sl-green-rgb);
-  --slate-rot-4: var(--sl-teal-rgb);
-  --slate-rot-5: var(--sl-cyan-rgb);
-  --slate-rot-6: var(--sl-blue-rgb);
-  --slate-rot-7: var(--sl-purple-rgb);
-  --slate-rot-8: var(--sl-gray-rgb);
+	--slate-rot-1: var(--sl-red);
+	--slate-rot-2: var(--sl-orange);
+	--slate-rot-3: var(--sl-green);
+	--slate-rot-4: var(--sl-teal);
+	--slate-rot-5: var(--sl-cyan);
+	--slate-rot-6: var(--sl-blue);
+	--slate-rot-7: var(--sl-purple);
+	--slate-rot-8: var(--sl-gray);
 }
 
 /* The default ladder puts red at 1 and green at 3. Under deuteranopia and
@@ -248,12 +719,12 @@ body {
    alternate ordering leads with the blue/orange pair that survives every
    common form of color vision deficiency. */
 body.slate-cvd-ladder {
-  --slate-depth-1: var(--sl-blue-rgb);
-  --slate-depth-2: var(--sl-orange-rgb);
-  --slate-depth-3: var(--sl-purple-rgb);
-  --slate-depth-4: var(--sl-teal-rgb);
-  --slate-depth-5: var(--sl-red-rgb);
-  --slate-depth-6: var(--sl-gray-rgb);
+	--slate-depth-1: var(--sl-blue);
+	--slate-depth-2: var(--sl-orange);
+	--slate-depth-3: var(--sl-purple);
+	--slate-depth-4: var(--sl-teal);
+	--slate-depth-5: var(--sl-red);
+	--slate-depth-6: var(--sl-gray);
 }
 
 /* ---------------------------------------------------------------------------
@@ -261,88 +732,105 @@ body.slate-cvd-ladder {
    ------------------------------------------------------------------------ */
 
 body {
-  --font-interface-theme: "Inter", "Inter Variable", -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --font-text-theme: "Iowan Old Style", "Charter", "Palatino", "Source Serif Pro",
-    Georgia, serif;
-  --font-monospace-theme: "JetBrains Mono", "SF Mono", "Berkeley Mono",
-    "IBM Plex Mono", ui-monospace, Menlo, monospace;
+	--font-interface-theme: var(
+		--ds-font-interface,
+		"Inter",
+		"Inter Variable",
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		Roboto,
+		"Helvetica Neue",
+		sans-serif
+	);
+	--font-text-theme: var(
+		--ds-font-text,
+		"Iowan Old Style",
+		"Charter",
+		"Palatino",
+		"Source Serif Pro",
+		Georgia,
+		serif
+	);
+	--font-monospace-theme: var(
+		--ds-font-mono,
+		"JetBrains Mono",
+		"SF Mono",
+		"Berkeley Mono",
+		"IBM Plex Mono",
+		ui-monospace,
+		Menlo,
+		monospace
+	);
 
-  /* Obsidian passes `var(--font-mermaid)` straight into mermaid's
-     themeVariables at render time — it is the one mermaid property with a
-     documented hook, and it defaults to var(--font-text). Setting it here is
-     why section 21 needs no font-family override: mermaid emits the interface
-     font itself instead of the theme fighting an id-scoped rule. */
-  --font-mermaid: var(--font-interface-theme);
+	--file-line-width: calc(var(--ds-line-width, 42) * 1rem);
 
-  --file-line-width: var(--slate-line-width, 42rem);
-
-  /* Gap above a heading. Reading view spends it as the heading's own
+	/* Gap above a heading. Reading view spends it as the heading's own
      margin-top, live preview as the previous line's padding-bottom — either
      way it lands outside the tinted box. The fallback is Obsidian's own
      formula, so reading view keeps the rhythm it already had and live preview
      comes up to meet it. */
-  --heading-spacing: var(--slate-heading-space, calc(var(--p-spacing) * 2.5));
-  --line-height-normal: 1.7;
-  --line-height-tight: 1.35;
-  --p-spacing: 1.1rem;
+	--heading-spacing: calc(var(--ds-heading-space, 2.75) * 1rem);
+	--line-height-normal: var(--ds-line-height, 1.7);
+	--line-height-tight: 1.35;
+	--p-spacing: calc(var(--ds-p-spacing, 1.1) * 1rem);
 
-  --font-weight: 400;
-  --bold-weight: 650;
+	--font-weight: 400;
+	--bold-weight: var(--ds-bold-weight, 650);
 
-  --h1-size: 2rem;
-  --h2-size: 1.55rem;
-  --h3-size: 1.28rem;
-  --h4-size: 1.1rem;
-  --h5-size: 1rem;
-  --h6-size: 0.9rem;
+	--h1-size: 2rem;
+	--h2-size: 1.55rem;
+	--h3-size: 1.28rem;
+	--h4-size: 1.1rem;
+	--h5-size: 1rem;
+	--h6-size: 0.9rem;
 
-  --h1-weight: 700;
-  --h2-weight: 650;
-  --h3-weight: 650;
-  --h4-weight: 650;
-  --h5-weight: 650;
-  --h6-weight: 700;
+	--h1-weight: 700;
+	--h2-weight: 650;
+	--h3-weight: 650;
+	--h4-weight: 650;
+	--h5-weight: 650;
+	--h6-weight: 700;
 
-  --h1-line-height: 1.2;
-  --h2-line-height: 1.25;
-  --h3-line-height: 1.3;
-  --h4-line-height: 1.35;
-  --h5-line-height: 1.4;
-  --h6-line-height: 1.4;
+	--h1-line-height: 1.2;
+	--h2-line-height: 1.25;
+	--h3-line-height: 1.3;
+	--h4-line-height: 1.35;
+	--h5-line-height: 1.4;
+	--h6-line-height: 1.4;
 
-  --h1-variant: normal;
-  --h6-variant: normal;
+	--h1-variant: normal;
+	--h6-variant: normal;
 
-  --code-size: 0.875em;
-  --font-adaptive-normal: 16px;
+	--code-size: calc(var(--ds-code-size, 14) * 1px);
+	--font-adaptive-normal: calc(var(--ds-font-size, 16) * 1px);
 
-  --radius-s: 4px;
-  --radius-m: 7px;
-  --radius-l: 11px;
-  --radius-xl: 16px;
+	--radius-s: 4px;
+	--radius-m: 7px;
+	--radius-l: 11px;
+	--radius-xl: 16px;
 
-  --input-shadow: none;
-  --shadow-s: 0 1px 2px rgba(var(--sl-shadow-color), var(--sl-shadow-strength));
-  --shadow-l: 0 8px 28px rgba(var(--sl-shadow-color), var(--sl-shadow-strength));
+	--input-shadow: none;
+	--shadow-s: 0 1px 2px rgba(var(--sl-shadow-color), var(--sl-shadow-strength));
+	--shadow-l: 0 8px 28px rgba(var(--sl-shadow-color), var(--sl-shadow-strength));
 }
 
 /* Opt-out: sans everywhere. */
 body.slate-sans-body {
-  --font-text-theme: var(--font-interface-theme);
+	--font-text-theme: var(--font-interface-theme);
 }
 
 .markdown-preview-view,
 .markdown-source-view.mod-cm6 .cm-content {
-  letter-spacing: 0.002em;
+	letter-spacing: 0.002em;
 }
 
 .markdown-rendered h1,
 .markdown-rendered h2,
 .markdown-rendered h3,
 .HyperMD-header {
-  letter-spacing: -0.018em;
-  font-family: var(--font-interface-theme);
+	letter-spacing: -0.018em;
+	font-family: var(--font-interface-theme);
 }
 
 /* ---------------------------------------------------------------------------
@@ -350,55 +838,75 @@ body.slate-sans-body {
    ------------------------------------------------------------------------ */
 
 body {
-  --background-primary: var(--sl-bg);
-  --background-primary-alt: var(--sl-surface);
-  --background-secondary: var(--sl-surface);
-  --background-secondary-alt: var(--sl-overlay);
+	--background-primary: var(--sl-bg);
+	--background-primary-alt: var(--sl-surface);
+	--background-secondary: var(--sl-surface);
+	--background-secondary-alt: var(--sl-overlay);
 
-  --background-modifier-hover: rgba(var(--sl-primary-rgb), 0.09);
-  --background-modifier-active-hover: rgba(var(--sl-primary-rgb), 0.16);
-  --background-modifier-border: var(--sl-border);
-  --background-modifier-border-hover: rgba(var(--sl-primary-rgb), 0.45);
-  --background-modifier-border-focus: var(--sl-primary);
-  --background-modifier-form-field: rgba(var(--sl-overlay-rgb), 0.7);
-  --background-modifier-error: rgba(var(--sl-red-rgb), 0.22);
-  --background-modifier-error-hover: rgba(var(--sl-red-rgb), 0.34);
-  --background-modifier-error-rgb: var(--sl-red-rgb);
-  --background-modifier-success: rgba(var(--sl-green-rgb), 0.24);
-  --background-modifier-success-rgb: var(--sl-green-rgb);
-  --background-modifier-message: rgba(var(--sl-text-rgb), 0.85);
+	--background-modifier-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 9%,
+		transparent
+	);
+	--background-modifier-active-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 16%,
+		transparent
+	);
+	--background-modifier-border: var(--sl-border);
+	--background-modifier-border-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 45%,
+		transparent
+	);
+	--background-modifier-border-focus: var(--sl-primary);
+	--background-modifier-form-field: rgba(var(--sl-overlay-rgb), 0.7);
+	--background-modifier-error: rgba(var(--sl-red-rgb), 0.22);
+	--background-modifier-error-hover: rgba(var(--sl-red-rgb), 0.34);
+	--background-modifier-error-rgb: var(--sl-red-rgb);
+	--background-modifier-success: rgba(var(--sl-green-rgb), 0.24);
+	--background-modifier-success-rgb: var(--sl-green-rgb);
+	--background-modifier-message: rgba(var(--sl-text-rgb), 0.85);
 
-  /* Workspace splitters: hairline, low contrast, no grab-bar bulk. */
-  --divider-color: rgba(var(--sl-border-rgb), 0.55);
-  --divider-color-hover: rgba(var(--sl-primary-rgb), 0.35);
-  --divider-width: 1px;
-  --divider-width-hover: 1px;
-  --divider-vertical-height: 100%;
-  --hr-color: rgba(var(--sl-border-rgb), 0.55);
+	/* Workspace splitters: hairline, low contrast, no grab-bar bulk. */
+	--divider-color: rgba(var(--sl-border-rgb), 0.55);
+	--divider-color-hover: color-mix(in srgb, var(--sl-primary) 35%, transparent);
+	--divider-width: 1px;
+	--divider-width-hover: 1px;
+	--divider-vertical-height: 100%;
+	--hr-color: rgba(var(--sl-border-rgb), 0.55);
 
-  --modal-background: var(--sl-bg);
-  --modal-border-color: var(--sl-border);
-  --prompt-border-color: var(--sl-border);
+	--modal-background: var(--sl-bg);
+	--modal-border-color: var(--sl-border);
+	--prompt-border-color: var(--sl-border);
 
-  --titlebar-background: var(--sl-surface);
-  --titlebar-background-focused: var(--sl-surface);
-  --titlebar-border-color: var(--sl-border);
-  --ribbon-background: var(--sl-surface);
-  --ribbon-background-collapsed: var(--sl-surface);
-  --status-bar-background: var(--sl-surface);
-  --status-bar-border-color: var(--sl-border);
+	--titlebar-background: var(--sl-surface);
+	--titlebar-background-focused: var(--sl-surface);
+	--titlebar-border-color: var(--sl-border);
+	--ribbon-background: var(--sl-surface);
+	--ribbon-background-collapsed: var(--sl-surface);
+	--status-bar-background: var(--sl-surface);
+	--status-bar-border-color: var(--sl-border);
 
-  --tab-outline-color: var(--sl-border);
-  --tab-container-background: var(--sl-surface);
-  --tab-text-color-focused-active: var(--sl-primary);
-  --tab-text-color-focused-active-current: var(--sl-primary);
+	--tab-outline-color: var(--sl-border);
+	--tab-container-background: var(--sl-surface);
+	--tab-text-color-focused-active: var(--sl-primary);
+	--tab-text-color-focused-active-current: var(--sl-primary);
 
-  --scrollbar-bg: transparent;
-  --scrollbar-thumb-bg: rgba(var(--sl-gray-rgb), 0.35);
-  --scrollbar-active-thumb-bg: rgba(var(--sl-primary-rgb), 0.6);
+	--scrollbar-bg: transparent;
+	--scrollbar-thumb-bg: rgba(var(--sl-gray-rgb), 0.35);
+	--scrollbar-active-thumb-bg: color-mix(
+		in srgb,
+		var(--sl-primary) 60%,
+		transparent
+	);
 
-  --indentation-guide-color: rgba(var(--sl-gray-rgb), 0.25);
-  --indentation-guide-color-active: rgba(var(--sl-primary-rgb), 0.6);
+	--indentation-guide-color: rgba(var(--sl-gray-rgb), 0.25);
+	--indentation-guide-color-active: color-mix(
+		in srgb,
+		var(--sl-primary) 60%,
+		transparent
+	);
 }
 
 /* ---------------------------------------------------------------------------
@@ -406,67 +914,71 @@ body {
    ------------------------------------------------------------------------ */
 
 body {
-  --text-normal: var(--sl-text);
-  --text-muted: var(--sl-muted);
-  --text-faint: rgba(var(--sl-muted-rgb), 0.62);
-  /* Slate's textOnFillLight, identical in both modes. */
-  --text-on-accent: #ffffff;
-  --text-on-accent-inverted: rgb(var(--sl-bg-rgb));
+	--text-normal: var(--sl-text);
+	--text-muted: var(--sl-muted);
+	--text-faint: rgba(var(--sl-muted-rgb), 0.62);
+	/* Slate's textOnFillLight, identical in both modes. */
+	--text-on-accent: #ffffff;
+	--text-on-accent-inverted: rgb(var(--sl-bg-rgb));
 
-  --text-accent: var(--sl-primary);
-  --text-accent-hover: var(--sl-cyan);
-  --text-error: var(--sl-red);
-  --text-warning: var(--sl-orange);
-  --text-success: var(--sl-green);
+	--text-accent: var(--sl-primary);
+	--text-accent-hover: var(--sl-cyan);
+	--text-error: var(--sl-red);
+	--text-warning: var(--sl-orange);
+	--text-success: var(--sl-green);
 
-  --text-selection: rgba(var(--sl-primary-rgb), 0.22);
-  --text-highlight-bg: rgba(var(--sl-yellow-rgb), 0.38);
-  --text-highlight-bg-active: rgba(var(--sl-orange-rgb), 0.5);
+	--text-selection: color-mix(in srgb, var(--sl-primary) 22%, transparent);
+	--text-highlight-bg: rgba(var(--sl-yellow-rgb), 0.38);
+	--text-highlight-bg-active: rgba(var(--sl-orange-rgb), 0.5);
 
-  --interactive-normal: var(--sl-surface);
-  --interactive-hover: var(--sl-overlay);
-  --interactive-accent: var(--sl-primary);
-  --interactive-accent-hover: rgba(var(--sl-primary-rgb), 0.86);
+	--interactive-normal: var(--sl-surface);
+	--interactive-hover: var(--sl-overlay);
+	--interactive-accent: var(--sl-primary);
+	--interactive-accent-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 86%,
+		transparent
+	);
 
-  --color-accent: var(--sl-primary);
-  --color-accent-1: var(--sl-cyan);
-  --color-accent-2: var(--sl-accent);
+	--color-accent: var(--sl-primary);
+	--color-accent-1: var(--sl-cyan);
+	--color-accent-2: var(--sl-accent);
 
-  --icon-color: var(--sl-muted);
-  --icon-color-hover: var(--sl-primary);
-  --icon-color-active: var(--sl-primary);
-  --icon-color-focused: var(--sl-text);
+	--icon-color: var(--sl-muted);
+	--icon-color-hover: var(--sl-primary);
+	--icon-color-active: var(--sl-primary);
+	--icon-color-focused: var(--sl-text);
 
-  --link-color: var(--sl-primary);
-  --link-color-hover: var(--sl-cyan);
-  --link-decoration: none;
-  --link-decoration-hover: underline;
-  --link-external-color: var(--sl-purple);
-  --link-external-color-hover: rgba(var(--sl-purple-rgb), 0.8);
-  --link-unresolved-color: var(--sl-red);
-  --link-unresolved-opacity: 0.75;
-  --link-unresolved-decoration-style: dotted;
-  --link-unresolved-decoration-color: rgba(var(--sl-red-rgb), 0.6);
+	--link-color: var(--sl-primary);
+	--link-color-hover: var(--sl-cyan);
+	--link-decoration: none;
+	--link-decoration-hover: underline;
+	--link-external-color: var(--sl-purple);
+	--link-external-color-hover: rgba(var(--sl-purple-rgb), 0.8);
+	--link-unresolved-color: var(--sl-red);
+	--link-unresolved-opacity: 0.75;
+	--link-unresolved-decoration-style: dotted;
+	--link-unresolved-decoration-color: rgba(var(--sl-red-rgb), 0.6);
 }
 
 /* Obsidian's named color slots — used by plugins, canvas and the picker. */
 body {
-  --color-red-rgb: var(--sl-red-rgb);
-  --color-red: var(--sl-red);
-  --color-orange-rgb: var(--sl-orange-rgb);
-  --color-orange: var(--sl-orange);
-  --color-yellow-rgb: var(--sl-yellow-rgb);
-  --color-yellow: var(--sl-yellow);
-  --color-green-rgb: var(--sl-green-rgb);
-  --color-green: var(--sl-green);
-  --color-cyan-rgb: var(--sl-cyan-rgb);
-  --color-cyan: var(--sl-cyan);
-  --color-blue-rgb: var(--sl-blue-rgb);
-  --color-blue: var(--sl-blue);
-  --color-purple-rgb: var(--sl-purple-rgb);
-  --color-purple: var(--sl-purple);
-  --color-pink-rgb: var(--sl-red-rgb);
-  --color-pink: var(--sl-red);
+	--color-red-rgb: var(--sl-red-rgb);
+	--color-red: var(--sl-red);
+	--color-orange-rgb: var(--sl-orange-rgb);
+	--color-orange: var(--sl-orange);
+	--color-yellow-rgb: var(--sl-yellow-rgb);
+	--color-yellow: var(--sl-yellow);
+	--color-green-rgb: var(--sl-green-rgb);
+	--color-green: var(--sl-green);
+	--color-cyan-rgb: var(--sl-cyan-rgb);
+	--color-cyan: var(--sl-cyan);
+	--color-blue-rgb: var(--sl-blue-rgb);
+	--color-blue: var(--sl-blue);
+	--color-purple-rgb: var(--sl-purple-rgb);
+	--color-purple: var(--sl-purple);
+	--color-pink-rgb: var(--sl-red-rgb);
+	--color-pink: var(--sl-red);
 }
 
 /* ---------------------------------------------------------------------------
@@ -478,21 +990,21 @@ body {
    palette is used verbatim rather than darkened to compensate. Yellow keeps
    its fill duties (highlight, canvas, plugin color slot) where it works. */
 body {
-  --h1-color: var(--sl-red);
-  --h2-color: var(--sl-orange);
-  --h3-color: var(--sl-green);
-  --h4-color: var(--sl-teal);
-  --h5-color: var(--sl-blue);
-  --h6-color: var(--sl-purple);
+	--h1-color: var(--sl-red);
+	--h2-color: var(--sl-orange);
+	--h3-color: var(--sl-green);
+	--h4-color: var(--sl-teal);
+	--h5-color: var(--sl-blue);
+	--h6-color: var(--sl-purple);
 }
 
 body.slate-plain-headings {
-  --h1-color: var(--sl-text);
-  --h2-color: var(--sl-text);
-  --h3-color: var(--sl-text);
-  --h4-color: var(--sl-text);
-  --h5-color: var(--sl-text);
-  --h6-color: var(--sl-muted);
+	--h1-color: var(--sl-text);
+	--h2-color: var(--sl-text);
+	--h3-color: var(--sl-text);
+	--h4-color: var(--sl-text);
+	--h5-color: var(--sl-text);
+	--h6-color: var(--sl-muted);
 }
 
 /* A flat wash behind each heading in its own hue, on a rounded block,
@@ -504,39 +1016,91 @@ body.slate-plain-headings {
    measure; live preview only paints, since the line already owns its padding
    and a negative margin there causes horizontal overflow. */
 
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-rendered h1,
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header-1 {
-  background-color: rgba(var(--slate-depth-1), var(--slate-tint-1));
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-rendered
+	h1,
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header-1 {
+	background-color: color-mix(
+		in srgb,
+		var(--slate-depth-1) calc(var(--slate-tint-1) * 100%),
+		transparent
+	);
 }
 
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-rendered h2,
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header-2 {
-  background-color: rgba(var(--slate-depth-2), var(--slate-tint-2));
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-rendered
+	h2,
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header-2 {
+	background-color: color-mix(
+		in srgb,
+		var(--slate-depth-2) calc(var(--slate-tint-2) * 100%),
+		transparent
+	);
 }
 
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-rendered h3,
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header-3 {
-  background-color: rgba(var(--slate-depth-3), var(--slate-tint-3));
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-rendered
+	h3,
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header-3 {
+	background-color: color-mix(
+		in srgb,
+		var(--slate-depth-3) calc(var(--slate-tint-3) * 100%),
+		transparent
+	);
 }
 
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-rendered h4,
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header-4 {
-  background-color: rgba(var(--slate-depth-4), var(--slate-tint-4));
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-rendered
+	h4,
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header-4 {
+	background-color: color-mix(
+		in srgb,
+		var(--slate-depth-4) calc(var(--slate-tint-4) * 100%),
+		transparent
+	);
 }
 
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-rendered h5,
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header-5 {
-  background-color: rgba(var(--slate-depth-5), var(--slate-tint-5));
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-rendered
+	h5,
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header-5 {
+	background-color: color-mix(
+		in srgb,
+		var(--slate-depth-5) calc(var(--slate-tint-5) * 100%),
+		transparent
+	);
 }
 
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-rendered h6,
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header-6 {
-  background-color: rgba(var(--slate-depth-6), var(--slate-tint-6));
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-rendered
+	h6,
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header-6 {
+	background-color: color-mix(
+		in srgb,
+		var(--slate-depth-6) calc(var(--slate-tint-6) * 100%),
+		transparent
+	);
 }
 
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-rendered :is(h1, h2, h3, h4, h5, h6),
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header {
-  border-radius: var(--radius-m);
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-rendered
+	:is(h1, h2, h3, h4, h5, h6),
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header {
+	border-radius: var(--radius-m);
 }
 
 /* Obsidian gives live-preview heading lines 0.25em of bottom padding and none
@@ -557,14 +1121,18 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-
    Vertical is eaten by the border, horizontal is not, so ask for
    `--radius-m` across and `--radius-m + spacing` down, and the tint's own
    corners land back on --radius-m. A single radius here would square them off. */
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header {
-  padding-top: 0.12em;
-  padding-bottom: 0.12em;
-  padding-left: 0.6em;
-  border-top: var(--heading-spacing) solid transparent;
-  background-clip: padding-box;
-  border-top-left-radius: var(--radius-m) calc(var(--radius-m) + var(--heading-spacing));
-  border-top-right-radius: var(--radius-m) calc(var(--radius-m) + var(--heading-spacing));
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header {
+	padding-top: 0.12em;
+	padding-bottom: 0.12em;
+	padding-left: 0.6em;
+	border-top: var(--heading-spacing) solid transparent;
+	background-clip: padding-box;
+	border-top-left-radius: var(--radius-m)
+		calc(var(--radius-m) + var(--heading-spacing));
+	border-top-right-radius: var(--radius-m)
+		calc(var(--radius-m) + var(--heading-spacing));
 }
 
 /* Two headings back to back stay tight, and a note that opens on a heading
@@ -573,68 +1141,146 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-
    ol. Plain sibling combinators rather than a relational selector, which
    Obsidian's CSS lint flags — matching every line against its next sibling is
    exactly the invalidation pattern that costs in a long note. */
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .HyperMD-header + .HyperMD-header,
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-source-view.mod-cm6 .cm-line.HyperMD-header:first-child {
-  border-top-width: 0;
-  border-top-left-radius: var(--radius-m);
-  border-top-right-radius: var(--radius-m);
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header
+	+ .HyperMD-header,
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.cm-line.HyperMD-header:first-child {
+	border-top-width: 0;
+	border-top-left-radius: var(--radius-m);
+	border-top-right-radius: var(--radius-m);
 }
 
-body:not(.slate-plain-headings):not(.slate-plain-heading-tint) .markdown-rendered :is(h1, h2, h3, h4, h5, h6) {
-  padding: 0.12em 0.6em;
-  margin-inline-start: -0.6em;
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-rendered
+	:is(h1, h2, h3, h4, h5, h6) {
+	padding: 0.12em 0.6em;
+	margin-inline-start: -0.6em;
 }
 
 /* Fold arrows and the collapse indicator pick up the heading hue. */
-.markdown-rendered h1 .collapse-indicator svg { color: var(--h1-color); }
-.markdown-rendered h2 .collapse-indicator svg { color: var(--h2-color); }
-.markdown-rendered h3 .collapse-indicator svg { color: var(--h3-color); }
-.markdown-rendered h4 .collapse-indicator svg { color: var(--h4-color); }
-.markdown-rendered h5 .collapse-indicator svg { color: var(--h5-color); }
-.markdown-rendered h6 .collapse-indicator svg { color: var(--h6-color); }
+.markdown-rendered h1 .collapse-indicator svg {
+	color: var(--h1-color);
+}
+.markdown-rendered h2 .collapse-indicator svg {
+	color: var(--h2-color);
+}
+.markdown-rendered h3 .collapse-indicator svg {
+	color: var(--h3-color);
+}
+.markdown-rendered h4 .collapse-indicator svg {
+	color: var(--h4-color);
+}
+.markdown-rendered h5 .collapse-indicator svg {
+	color: var(--h5-color);
+}
+.markdown-rendered h6 .collapse-indicator svg {
+	color: var(--h6-color);
+}
 
 /* Heading markup (#, ##) in live preview stays quiet but keeps the hue. */
 .markdown-source-view.mod-cm6 .cm-header .cm-formatting-header {
-  opacity: 0.4;
+	opacity: 0.4;
 }
 
 /* Outline pane echoes the same ladder. */
-.outline-view .tree-item-self[data-heading-level="1"] .tree-item-inner { color: var(--h1-color); }
-.outline-view .tree-item-self[data-heading-level="2"] .tree-item-inner { color: var(--h2-color); }
-.outline-view .tree-item-self[data-heading-level="3"] .tree-item-inner { color: var(--h3-color); }
-.outline-view .tree-item-self[data-heading-level="4"] .tree-item-inner { color: var(--h4-color); }
-.outline-view .tree-item-self[data-heading-level="5"] .tree-item-inner { color: var(--h5-color); }
-.outline-view .tree-item-self[data-heading-level="6"] .tree-item-inner { color: var(--h6-color); }
+.outline-view .tree-item-self[data-heading-level="1"] .tree-item-inner {
+	color: var(--h1-color);
+}
+.outline-view .tree-item-self[data-heading-level="2"] .tree-item-inner {
+	color: var(--h2-color);
+}
+.outline-view .tree-item-self[data-heading-level="3"] .tree-item-inner {
+	color: var(--h3-color);
+}
+.outline-view .tree-item-self[data-heading-level="4"] .tree-item-inner {
+	color: var(--h4-color);
+}
+.outline-view .tree-item-self[data-heading-level="5"] .tree-item-inner {
+	color: var(--h5-color);
+}
+.outline-view .tree-item-self[data-heading-level="6"] .tree-item-inner {
+	color: var(--h6-color);
+}
 
 /* ---------------------------------------------------------------------------
    6. Inline markup
    ------------------------------------------------------------------------ */
 
 body {
-  --bold-color: var(--sl-primary);
-  --italic-color: var(--sl-accent);
-  --blockquote-border-color: var(--sl-accent);
-  --blockquote-background-color: rgba(var(--sl-accent-rgb), 0.06);
-  --embed-border-left: 2px solid rgba(var(--sl-purple-rgb), 0.5);
-  --embed-background: rgba(var(--sl-purple-rgb), 0.04);
+	--bold-color: var(--sl-primary);
+	--italic-color: var(--sl-accent);
+	--blockquote-border-color: var(--sl-accent);
+	/* Style Settings writes this with a px unit (format: px), so consume it
+	   directly; multiplying by 1px would produce an invalid px*px length. */
+	--blockquote-border-thickness: var(--ds-quote-bar, 4px);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--sl-accent) 6%,
+		transparent
+	);
+	--embed-border-left: 2px solid rgba(var(--sl-purple-rgb), 0.5);
+	--embed-background: rgba(var(--sl-purple-rgb), 0.04);
 }
 
 body.slate-plain-emphasis {
-  --bold-color: var(--sl-text);
-  --italic-color: var(--sl-text);
+	--bold-color: var(--sl-text);
+	--italic-color: var(--sl-text);
 }
 
-.markdown-rendered blockquote,
+/* Quotes render as Maple-style cards in reading view: a rounded wash panel
+   with the depth hue drawn as an inset pill on the left, instead of a border
+   glued to the edge. The ladder in section 16 feeds --blockquote-border-color
+   and --blockquote-background-color per nesting depth, so each nested card
+   keeps its own hue. Vertical breathing room is a slider. */
+.markdown-rendered blockquote {
+	position: relative;
+	border: none;
+	border-radius: var(--radius-m);
+	margin-block: var(--size-4-3);
+	padding-block: calc(var(--ds-quote-pad-y, 0.45) * 1em);
+	padding-inline: var(--size-4-4) var(--size-4-3);
+}
+
+.markdown-rendered blockquote::after {
+	content: "";
+	position: absolute;
+	left: var(--size-4-2);
+	inset-block: var(--size-4-2);
+	width: var(--blockquote-border-thickness);
+	border-radius: var(--radius-s);
+	background: var(--blockquote-border-color);
+}
+
+/* Headings inside a quote calm down to body size and rhythm (Maple), keeping
+   the spectrum hue the ladder gives them. */
+.markdown-rendered blockquote :is(h1, h2, h3, h4, h5, h6) {
+	--h1-size: var(--font-text-size);
+	--h2-size: var(--font-text-size);
+	--h3-size: var(--font-text-size);
+	--h4-size: var(--font-text-size);
+	--h5-size: var(--font-text-size);
+	--h6-size: var(--font-text-size);
+	--h1-line-height: var(--line-height-normal);
+	--h2-line-height: var(--line-height-normal);
+	--h3-line-height: var(--line-height-normal);
+	--h4-line-height: var(--line-height-normal);
+	--h5-line-height: var(--line-height-normal);
+	--h6-line-height: var(--line-height-normal);
+}
+
 .markdown-source-view.mod-cm6 .cm-blockquote {
-  background: var(--blockquote-background-color);
-  border-radius: 0 var(--radius-s) var(--radius-s) 0;
-  padding: 0.15em 0.9em;
+	background: var(--blockquote-background-color);
+	border-radius: var(--radius-s);
+	padding: 0.15em 0.9em;
 }
 
 mark,
 .cm-highlight {
-  border-radius: 3px;
-  padding: 0.05em 0.15em;
+	border-radius: 3px;
+	padding: 0.05em 0.15em;
 }
 
 /* The strike takes the same faint ink as the text it crosses out. An earlier
@@ -643,37 +1289,37 @@ mark,
    red hairline was not worth carrying a warning for. */
 del,
 s {
-  color: var(--text-faint);
+	color: var(--text-faint);
 }
 
 /* Spectrum rule. Scoped to note content so plugin panes in the sidebar keep
    their own hairlines. Deliberately faint — it marks a break, not a heading. */
 body:not(.slate-plain-rule) .markdown-rendered hr,
 body:not(.slate-plain-rule) .markdown-source-view.mod-cm6 .cm-hr::before {
-  border: none;
-  height: 1px;
-  border-radius: 0;
-  background: linear-gradient(
-    90deg,
-    var(--sl-red),
-    var(--sl-orange),
-    var(--sl-yellow),
-    var(--sl-green),
-    var(--sl-teal),
-    var(--sl-cyan),
-    var(--sl-blue),
-    var(--sl-purple)
-  );
-  opacity: 0.3;
+	border: none;
+	height: 1px;
+	border-radius: 0;
+	background: linear-gradient(
+		90deg,
+		var(--sl-red),
+		var(--sl-orange),
+		var(--sl-yellow),
+		var(--sl-green),
+		var(--sl-teal),
+		var(--sl-cyan),
+		var(--sl-blue),
+		var(--sl-purple)
+	);
+	opacity: 0.3;
 }
 
 body:not(.slate-plain-rule) .markdown-source-view.mod-cm6 .cm-hr {
-  background: none;
+	background: none;
 }
 
 body:not(.slate-plain-rule) .markdown-source-view.mod-cm6 .cm-hr::before {
-  content: "";
-  display: block;
+	content: "";
+	display: block;
 }
 
 /* ---------------------------------------------------------------------------
@@ -681,147 +1327,731 @@ body:not(.slate-plain-rule) .markdown-source-view.mod-cm6 .cm-hr::before {
    ------------------------------------------------------------------------ */
 
 body {
-  --code-background: rgba(var(--sl-purple-rgb), 0.1);
-  --code-normal: var(--sl-text);
-  --code-white: var(--sl-text);
-  --code-comment: rgba(var(--sl-gray-rgb), 0.95);
-  --code-function: var(--sl-purple);
-  --code-important: var(--sl-red);
-  --code-keyword: var(--sl-red);
-  --code-operator: var(--sl-orange);
-  --code-property: var(--sl-cyan);
-  --code-punctuation: var(--sl-muted);
-  --code-string: var(--sl-green);
-  --code-tag: var(--sl-blue);
-  --code-value: var(--sl-teal);
+	--code-background: rgba(var(--sl-purple-rgb), 0.1);
+	--code-normal: var(--sl-text);
+	--code-white: var(--sl-text);
+	--code-comment: rgba(var(--sl-gray-rgb), 0.95);
+	--code-function: var(--sl-purple);
+	--code-important: var(--sl-red);
+	--code-keyword: var(--sl-red);
+	--code-operator: var(--sl-orange);
+	--code-property: var(--sl-cyan);
+	--code-punctuation: var(--sl-muted);
+	--code-string: var(--sl-green);
+	--code-tag: var(--sl-blue);
+	--code-value: var(--sl-teal);
 
-  --pre-code-background: var(--sl-surface);
-  --code-radius: var(--radius-s);
+	--pre-code-background: var(--sl-surface);
+	--code-radius: var(--radius-s);
 }
 
 /* Inline code: purple ink on a purple wash, per the palette's code role. */
 .markdown-rendered code,
 .markdown-source-view.mod-cm6 .cm-inline-code {
-  color: var(--sl-purple);
-  background: var(--code-background);
-  border-radius: var(--radius-s);
-  padding: 0.12em 0.35em;
-  font-size: var(--code-size);
+	color: var(--sl-purple);
+	background: var(--code-background);
+	border-radius: var(--radius-s);
+	padding: 0.12em 0.35em;
+	font-size: var(--code-size);
 }
 
 /* Fenced blocks sit on the neutral panel, not the purple wash. */
 .markdown-rendered pre,
 .markdown-rendered pre code,
 .markdown-source-view.mod-cm6 .HyperMD-codeblock {
-  background: var(--pre-code-background);
-  color: var(--code-normal);
+	background: var(--pre-code-background);
+	color: var(--code-normal);
 }
 
 .markdown-rendered pre {
-  border: 1px solid var(--sl-border);
-  border-left: 3px solid rgba(var(--sl-purple-rgb), 0.7);
-  border-radius: var(--radius-m);
+	border: 1px solid var(--sl-border);
+	border-left: 3px solid rgba(var(--sl-purple-rgb), 0.7);
+	border-radius: var(--radius-m);
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-codeblock-begin {
-  border-top: 1px solid var(--sl-border);
-  border-radius: var(--radius-m) var(--radius-m) 0 0;
+	border-top: 1px solid var(--sl-border);
+	border-radius: var(--radius-m) var(--radius-m) 0 0;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-codeblock-end {
-  border-bottom: 1px solid var(--sl-border);
-  border-radius: 0 0 var(--radius-m) var(--radius-m);
+	border-bottom: 1px solid var(--sl-border);
+	border-radius: 0 0 var(--radius-m) var(--radius-m);
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-codeblock {
-  border-left: 3px solid rgba(var(--sl-purple-rgb), 0.7);
+	border-left: 3px solid rgba(var(--sl-purple-rgb), 0.7);
 }
 
 .markdown-rendered .code-block-flair,
 .markdown-source-view .code-block-flair {
-  color: var(--sl-purple);
-  opacity: 0.85;
+	color: var(--sl-purple);
+	opacity: 0.85;
+}
+
+/* Code block style variants, switched from Style Settings (ds-code-style).
+   The default style above needs no class; each variant overrides it from a
+   scoped body class, so the file keeps working without the plugin. */
+
+/* Terminal — a fixed dark console panel in both modes. The ground never
+   follows the app theme: a terminal is dark by definition, and the block
+   reads as a window dropped onto the page. Token hues mirror the dark
+   spectrum so syntax keeps its contrast on the deep ground. */
+body.ds-code-terminal {
+	--pre-code-background: #313445;
+	--code-normal: #c8d3dd;
+	--code-white: #c8d3dd;
+	--code-comment: #8593a1;
+	--code-function: #c3a9e8;
+	--code-important: #f08e7d;
+	--code-keyword: #f08e7d;
+	--code-operator: #e5a066;
+	--code-property: #7fc4e6;
+	--code-punctuation: #9aa7b4;
+	--code-string: #8fca86;
+	--code-tag: #7fa8d9;
+	--code-value: #6fc7ba;
+}
+
+body.ds-code-terminal .markdown-rendered pre {
+	border: 1px solid rgba(255, 255, 255, 0.09);
+	border-left: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+body.ds-code-terminal .markdown-source-view.mod-cm6 .HyperMD-codeblock {
+	border-left: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+body.ds-code-terminal .markdown-source-view.mod-cm6 .HyperMD-codeblock-begin {
+	border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+body.ds-code-terminal .markdown-source-view.mod-cm6 .HyperMD-codeblock-end {
+	border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+body.ds-code-terminal .markdown-rendered .code-block-flair,
+body.ds-code-terminal .markdown-source-view .code-block-flair {
+	color: #8fb8d8;
+}
+
+/* Minimal — hairlines and the left rule all go; only a wash between the
+   surface and the page ground marks the block. The quietest option. */
+body.ds-code-minimal {
+	--pre-code-background: color-mix(
+		in srgb,
+		var(--sl-surface) 62%,
+		var(--sl-bg)
+	);
+}
+
+body.ds-code-minimal .markdown-rendered pre {
+	border: none;
+}
+
+body.ds-code-minimal .markdown-source-view.mod-cm6 .HyperMD-codeblock {
+	border-left: none;
+}
+
+body.ds-code-minimal .markdown-source-view.mod-cm6 .HyperMD-codeblock-begin {
+	border-top: none;
+}
+
+body.ds-code-minimal .markdown-source-view.mod-cm6 .HyperMD-codeblock-end {
+	border-bottom: none;
+}
+
+body.ds-code-minimal .markdown-rendered .code-block-flair,
+body.ds-code-minimal .markdown-source-view .code-block-flair {
+	color: var(--sl-muted);
+}
+
+/* Blueprint — the default structure re-dyed in the primary hue, so it tracks
+   the hue slider: ground wash, hairline and left rule all pull from
+   --sl-primary. Engineering-paper feel for a theme named after diagrams. */
+body.ds-code-blueprint {
+	--pre-code-background: color-mix(in srgb, var(--sl-primary) 7%, var(--sl-bg));
+}
+
+body.ds-code-blueprint .markdown-rendered pre {
+	border: 1px solid color-mix(in srgb, var(--sl-primary) 32%, transparent);
+	border-left: 3px solid color-mix(in srgb, var(--sl-primary) 65%, transparent);
+}
+
+body.ds-code-blueprint .markdown-source-view.mod-cm6 .HyperMD-codeblock {
+	border-left: 3px solid color-mix(in srgb, var(--sl-primary) 65%, transparent);
+}
+
+body.ds-code-blueprint .markdown-source-view.mod-cm6 .HyperMD-codeblock-begin {
+	border-top: 1px solid color-mix(in srgb, var(--sl-primary) 32%, transparent);
+}
+
+body.ds-code-blueprint .markdown-source-view.mod-cm6 .HyperMD-codeblock-end {
+	border-bottom: 1px solid
+		color-mix(in srgb, var(--sl-primary) 32%, transparent);
+}
+
+body.ds-code-blueprint .markdown-rendered .code-block-flair,
+body.ds-code-blueprint .markdown-source-view .code-block-flair {
+	color: var(--sl-primary);
+}
+
+/* macOS window — traffic lights at the head of the block and the language
+   label pinned to the title bar's right, doubling as a copy button. The
+   lights take the palette's red / yellow / green; the label takes the
+   primary. The dots and divider are reading-view chrome: live preview keeps
+   the panel and borders but cannot grow a title bar across cm lines. */
+body.ds-code-macos .markdown-rendered pre {
+	padding-top: calc(var(--size-4-3) + 2.2em);
+	border: 1px solid var(--sl-border);
+	border-left: 1px solid var(--sl-border);
+}
+
+/* The three lights as one element plus two shadows. */
+body.ds-code-macos .markdown-rendered pre::before {
+	content: "";
+	position: absolute;
+	top: 15px;
+	left: 14px;
+	width: 11px;
+	height: 11px;
+	border-radius: 50%;
+	background: var(--sl-red);
+	opacity: 0.9;
+	box-shadow:
+		18px 0 0 var(--sl-yellow),
+		36px 0 0 var(--sl-green);
+}
+
+/* Title bar divider. */
+body.ds-code-macos .markdown-rendered pre::after {
+	content: "";
+	position: absolute;
+	top: 2.4em;
+	left: 0;
+	right: 0;
+	border-top: 1px solid rgba(var(--sl-border-rgb), 0.6);
+}
+
+/* Core hides the copy button until hover; the title bar wants it resident. */
+body.ds-code-macos
+	.markdown-rendered
+	pre:not(:hover)
+	> button.copy-code-button {
+	display: block;
+}
+
+body.ds-code-macos .markdown-rendered button.copy-code-button {
+	margin: 0;
+	top: 8px;
+	inset-inline-end: 8px;
+	padding: 2px 9px;
+	color: var(--sl-primary);
+	font-weight: 600;
+	border-radius: var(--radius-s);
+	transition: background-color 0.15s ease;
+}
+
+body.ds-code-macos .markdown-rendered button.copy-code-button:hover {
+	background-color: color-mix(in srgb, var(--sl-primary) 12%, transparent);
+}
+
+/* The title bar wants the language's name, not a bare icon. Core only puts a
+   copy SVG in the button and the language lives on the code element's class,
+   which CSS cannot read as text — so each common language is mapped by hand
+   below. Anything unlisted keeps the icon, which doubles as the no-language
+   fallback. The icon hides only where a label takes its place. */
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-js)
+	> button.copy-code-button::after {
+	content: "js";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-javascript)
+	> button.copy-code-button::after {
+	content: "javascript";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-ts)
+	> button.copy-code-button::after {
+	content: "ts";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-typescript)
+	> button.copy-code-button::after {
+	content: "typescript";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-jsx)
+	> button.copy-code-button::after {
+	content: "jsx";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-tsx)
+	> button.copy-code-button::after {
+	content: "tsx";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-json)
+	> button.copy-code-button::after {
+	content: "json";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-jsonc)
+	> button.copy-code-button::after {
+	content: "jsonc";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-css)
+	> button.copy-code-button::after {
+	content: "css";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-scss)
+	> button.copy-code-button::after {
+	content: "scss";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-less)
+	> button.copy-code-button::after {
+	content: "less";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-html)
+	> button.copy-code-button::after {
+	content: "html";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-xml)
+	> button.copy-code-button::after {
+	content: "xml";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-svg)
+	> button.copy-code-button::after {
+	content: "svg";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-yaml)
+	> button.copy-code-button::after {
+	content: "yaml";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-yml)
+	> button.copy-code-button::after {
+	content: "yml";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-toml)
+	> button.copy-code-button::after {
+	content: "toml";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-ini)
+	> button.copy-code-button::after {
+	content: "ini";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-properties)
+	> button.copy-code-button::after {
+	content: "properties";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-bash)
+	> button.copy-code-button::after {
+	content: "bash";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-sh)
+	> button.copy-code-button::after {
+	content: "sh";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-shell)
+	> button.copy-code-button::after {
+	content: "shell";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-zsh)
+	> button.copy-code-button::after {
+	content: "zsh";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-powershell)
+	> button.copy-code-button::after {
+	content: "powershell";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-python)
+	> button.copy-code-button::after {
+	content: "python";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-py)
+	> button.copy-code-button::after {
+	content: "py";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-java)
+	> button.copy-code-button::after {
+	content: "java";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-kotlin)
+	> button.copy-code-button::after {
+	content: "kotlin";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-swift)
+	> button.copy-code-button::after {
+	content: "swift";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-c)
+	> button.copy-code-button::after {
+	content: "c";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-cpp)
+	> button.copy-code-button::after {
+	content: "cpp";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-csharp)
+	> button.copy-code-button::after {
+	content: "csharp";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-cs)
+	> button.copy-code-button::after {
+	content: "cs";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-go)
+	> button.copy-code-button::after {
+	content: "go";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-rust)
+	> button.copy-code-button::after {
+	content: "rust";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-rs)
+	> button.copy-code-button::after {
+	content: "rs";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-ruby)
+	> button.copy-code-button::after {
+	content: "ruby";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-rb)
+	> button.copy-code-button::after {
+	content: "rb";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-php)
+	> button.copy-code-button::after {
+	content: "php";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-sql)
+	> button.copy-code-button::after {
+	content: "sql";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-graphql)
+	> button.copy-code-button::after {
+	content: "graphql";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-markdown)
+	> button.copy-code-button::after {
+	content: "markdown";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-md)
+	> button.copy-code-button::after {
+	content: "md";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-dockerfile)
+	> button.copy-code-button::after {
+	content: "dockerfile";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-docker)
+	> button.copy-code-button::after {
+	content: "docker";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-diff)
+	> button.copy-code-button::after {
+	content: "diff";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-text)
+	> button.copy-code-button::after {
+	content: "text";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-txt)
+	> button.copy-code-button::after {
+	content: "txt";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-lua)
+	> button.copy-code-button::after {
+	content: "lua";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-r)
+	> button.copy-code-button::after {
+	content: "r";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-dart)
+	> button.copy-code-button::after {
+	content: "dart";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-vue)
+	> button.copy-code-button::after {
+	content: "vue";
+}
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(> code.language-svelte)
+	> button.copy-code-button::after {
+	content: "svelte";
+}
+
+/* Where a label renders, the copy icon steps aside. The list mirrors the
+   table above: unlisted languages keep the icon. */
+body.ds-code-macos
+	.markdown-rendered
+	pre:has(
+		> code:is(
+				.language-js,
+				.language-javascript,
+				.language-ts,
+				.language-typescript,
+				.language-jsx,
+				.language-tsx,
+				.language-json,
+				.language-jsonc,
+				.language-css,
+				.language-scss,
+				.language-less,
+				.language-html,
+				.language-xml,
+				.language-svg,
+				.language-yaml,
+				.language-yml,
+				.language-toml,
+				.language-ini,
+				.language-properties,
+				.language-bash,
+				.language-sh,
+				.language-shell,
+				.language-zsh,
+				.language-powershell,
+				.language-python,
+				.language-py,
+				.language-java,
+				.language-kotlin,
+				.language-swift,
+				.language-c,
+				.language-cpp,
+				.language-csharp,
+				.language-cs,
+				.language-go,
+				.language-rust,
+				.language-rs,
+				.language-ruby,
+				.language-rb,
+				.language-php,
+				.language-sql,
+				.language-graphql,
+				.language-markdown,
+				.language-md,
+				.language-dockerfile,
+				.language-docker,
+				.language-diff,
+				.language-text,
+				.language-txt,
+				.language-lua,
+				.language-r,
+				.language-dart,
+				.language-vue,
+				.language-svelte
+			)
+	)
+	> button.copy-code-button
+	svg {
+	display: none;
+}
+
+/* Live preview keeps the window body without the title bar. */
+body.ds-code-macos .markdown-source-view.mod-cm6 .HyperMD-codeblock {
+	border-left: 1px solid var(--sl-border);
+}
+
+body.ds-code-macos .markdown-source-view.mod-cm6 .HyperMD-codeblock-begin {
+	border-top: 1px solid var(--sl-border);
+}
+
+body.ds-code-macos .markdown-source-view.mod-cm6 .HyperMD-codeblock-end {
+	border-bottom: 1px solid var(--sl-border);
+}
+
+body.ds-code-macos .markdown-rendered .code-block-flair,
+body.ds-code-macos .markdown-source-view .code-block-flair {
+	color: var(--sl-primary);
+}
+
+/* Unified floating-shadow tokens. Every opt-in shadow in the theme — code
+   blocks, images, quote cards — draws from this one pair of sliders, so a
+   single control pair tunes the whole elevation language. The wide layer's
+   offset and blur scale with the size slider; alpha multiplies the mode-based
+   strength so dark mode stays subtle. */
+body {
+	--ds-shadow-blur: var(--ds-shadow-size, 22px);
+	--ds-shadow-lift: calc(var(--ds-shadow-size, 22px) * 0.36);
+	--ds-shadow-a: calc(var(--sl-shadow-strength) * var(--ds-shadow-strength, 1));
+	--ds-float-shadow:
+		0 1px 2px rgba(var(--sl-shadow-color), calc(var(--ds-shadow-a) * 1.3)),
+		0 var(--ds-shadow-lift) var(--ds-shadow-blur)
+		rgba(var(--sl-shadow-color), calc(var(--ds-shadow-a) * 0.9));
+	--ds-card-shadow:
+		0 1px 2px rgba(var(--sl-shadow-color), calc(var(--ds-shadow-a) * 0.8)),
+		0 calc(var(--ds-shadow-blur) * 0.25) calc(var(--ds-shadow-blur) * 0.5)
+		rgba(var(--sl-shadow-color), calc(var(--ds-shadow-a) * 0.5));
+}
+
+/* Floating shadow — an independent toggle (ds-code-float) that stacks with
+   any style variant, drawn from the unified tokens above. */
+body.ds-code-float .markdown-rendered pre {
+	box-shadow: var(--ds-float-shadow);
+}
+
+/* Image frames — the border toggle (ds-img-border) gates the frame, the style
+   select picks a hairline or a matted card, and the float toggle stacks the
+   same two-layer shadow the code blocks use. */
+body.ds-img-border .markdown-rendered img,
+body.ds-img-border .markdown-source-view.mod-cm6 .internal-embed img {
+	border: 1px solid var(--sl-border);
+	border-radius: var(--radius-m);
+}
+
+body.ds-img-border.ds-img-dashed .markdown-rendered img,
+body.ds-img-border.ds-img-dashed
+	.markdown-source-view.mod-cm6
+	.internal-embed
+	img {
+	border-style: dashed;
+}
+
+body.ds-img-border.ds-img-dotted .markdown-rendered img,
+body.ds-img-border.ds-img-dotted
+	.markdown-source-view.mod-cm6
+	.internal-embed
+	img {
+	border-style: dotted;
+	border-width: 2px;
+}
+
+body.ds-img-border.ds-img-card .markdown-rendered img,
+body.ds-img-border.ds-img-card
+	.markdown-source-view.mod-cm6
+	.internal-embed
+	img {
+	padding: var(--size-4-2);
+	background: var(--background-secondary);
+}
+
+body.ds-img-float .markdown-rendered img,
+body.ds-img-float .markdown-source-view.mod-cm6 .internal-embed img {
+	box-shadow: var(--ds-float-shadow);
 }
 
 /* ---------------------------------------------------------------------------
-   8. Callouts — every default type gets a distinct hue
+   8. Callouts — intentionally untouched
+   Callout colors, borders, padding and title styles are left to Obsidian's
+   own defaults; the spectrum is spent on headings, tags and folders instead.
    ------------------------------------------------------------------------ */
-
-body {
-  --callout-border-width: 0px;
-  --callout-border-opacity: 0.28;
-  --callout-padding: 0.85em 1em;
-  --callout-radius: var(--radius-m);
-  --callout-title-size: 1em;
-
-  /* Callout titles are ink, so yellow is out here too. */
-  --callout-note: var(--sl-blue-rgb);
-  --callout-abstract: var(--sl-gray-rgb);
-  --callout-summary: var(--sl-gray-rgb);
-  --callout-tldr: var(--sl-gray-rgb);
-  --callout-info: var(--sl-blue-rgb);
-  --callout-todo: var(--sl-blue-rgb);
-  --callout-tip: var(--sl-teal-rgb);
-  --callout-hint: var(--sl-teal-rgb);
-  --callout-important: var(--sl-teal-rgb);
-  --callout-success: var(--sl-green-rgb);
-  --callout-check: var(--sl-green-rgb);
-  --callout-done: var(--sl-green-rgb);
-  --callout-question: var(--sl-cyan-rgb);
-  --callout-help: var(--sl-cyan-rgb);
-  --callout-faq: var(--sl-cyan-rgb);
-  --callout-warning: var(--sl-orange-rgb);
-  --callout-caution: var(--sl-orange-rgb);
-  --callout-attention: var(--sl-orange-rgb);
-  --callout-failure: var(--sl-red-rgb);
-  --callout-fail: var(--sl-red-rgb);
-  --callout-missing: var(--sl-red-rgb);
-  --callout-danger: var(--sl-red-rgb);
-  --callout-error: var(--sl-red-rgb);
-  --callout-bug: var(--sl-red-rgb);
-  --callout-example: var(--sl-purple-rgb);
-  --callout-quote: var(--sl-gray-rgb);
-  --callout-cite: var(--sl-gray-rgb);
-}
-
-.callout {
-  background: rgba(var(--callout-color), var(--sl-wash));
-  border-left: 3px solid rgba(var(--callout-color), 0.85);
-  mix-blend-mode: var(--highlight-mix-blend-mode, normal);
-}
-
-.callout-title {
-  color: rgb(var(--callout-color));
-  font-weight: var(--bold-weight);
-  letter-spacing: -0.01em;
-}
-
-.callout-icon .svg-icon {
-  color: rgb(var(--callout-color));
-}
-
-/* Foldable callouts get a matching chevron. */
-.callout.is-collapsible .callout-fold svg {
-  color: rgb(var(--callout-color));
-}
 
 /* ---------------------------------------------------------------------------
    9. Lists, tasks and checkboxes
    ------------------------------------------------------------------------ */
 
 body {
-  --checkbox-color: var(--sl-accent);
-  --checkbox-color-hover: var(--sl-teal);
-  --checkbox-border-color: rgba(var(--sl-gray-rgb), 0.7);
-  --checkbox-border-color-hover: var(--sl-primary);
-  --checkbox-marker-color: var(--sl-bg);
-  --checklist-done-color: var(--text-faint);
-  --checklist-done-decoration: line-through;
-  --list-marker-color: var(--sl-primary);
-  --list-marker-color-hover: var(--sl-cyan);
-  --list-marker-color-collapsed: var(--sl-orange);
-  --list-indent: 1.6em;
-  --list-bullet-size: 0.5em;
+	--checkbox-color: var(--sl-accent);
+	--checkbox-color-hover: var(--sl-teal);
+	--checkbox-border-color: rgba(var(--sl-gray-rgb), 0.7);
+	--checkbox-border-color-hover: var(--sl-primary);
+	--checkbox-marker-color: var(--sl-bg);
+	--checklist-done-color: var(--text-faint);
+	--checklist-done-decoration: line-through;
+	--list-marker-color: var(--sl-primary);
+	--list-marker-color-hover: var(--sl-cyan);
+	--list-marker-color-collapsed: var(--sl-orange);
+	--list-indent: 1.6em;
+	--list-bullet-size: 0.5em;
 }
 
 /* Extended task states. Each glyph carries its own hue so a task board of
@@ -829,15 +2059,15 @@ body {
 input[data-task=">"]:checked,
 li[data-task=">"] > input:checked,
 li[data-task=">"] > p > input:checked {
-  --checkbox-color: var(--sl-blue);
-  --checkbox-color-hover: var(--sl-blue);
+	--checkbox-color: var(--sl-blue);
+	--checkbox-color-hover: var(--sl-blue);
 }
 
 input[data-task="!"]:checked,
 li[data-task="!"] > input:checked,
 li[data-task="!"] > p > input:checked {
-  --checkbox-color: var(--sl-orange);
-  --checkbox-color-hover: var(--sl-orange);
+	--checkbox-color: var(--sl-orange);
+	--checkbox-color-hover: var(--sl-orange);
 }
 
 /* Yellow is skipped here as well: the white check marker sits at 2.4:1 on a
@@ -845,33 +2075,33 @@ li[data-task="!"] > p > input:checked {
 input[data-task="?"]:checked,
 li[data-task="?"] > input:checked,
 li[data-task="?"] > p > input:checked {
-  --checkbox-color: var(--sl-cyan);
-  --checkbox-color-hover: var(--sl-cyan);
+	--checkbox-color: var(--sl-cyan);
+	--checkbox-color-hover: var(--sl-cyan);
 }
 
 input[data-task="*"]:checked,
 li[data-task="*"] > input:checked,
 li[data-task="*"] > p > input:checked {
-  --checkbox-color: var(--sl-purple);
-  --checkbox-color-hover: var(--sl-purple);
+	--checkbox-color: var(--sl-purple);
+	--checkbox-color-hover: var(--sl-purple);
 }
 
 input[data-task="-"]:checked,
 li[data-task="-"] > input:checked,
 li[data-task="-"] > p > input:checked {
-  --checkbox-color: var(--sl-red);
-  --checkbox-color-hover: var(--sl-red);
+	--checkbox-color: var(--sl-red);
+	--checkbox-color-hover: var(--sl-red);
 }
 
 li[data-task="-"].task-list-item.is-checked {
-  color: var(--text-faint);
-  text-decoration: line-through;
+	color: var(--text-faint);
+	text-decoration: line-through;
 }
 
 /* Only a genuine [x] is dimmed; the extended states stay readable. */
 .task-list-item.is-checked:not([data-task="x"]):not([data-task="X"]) {
-  color: var(--text-normal);
-  text-decoration: none;
+	color: var(--text-normal);
+	text-decoration: none;
 }
 
 /* ---------------------------------------------------------------------------
@@ -879,56 +2109,82 @@ li[data-task="-"].task-list-item.is-checked {
    ------------------------------------------------------------------------ */
 
 body {
-  --tag-color: var(--sl-accent);
-  --tag-background: rgba(var(--sl-accent-rgb), var(--sl-wash));
-  --tag-background-hover: rgba(var(--sl-accent-rgb), var(--sl-wash-strong));
-  --tag-border-width: 1px;
-  --tag-border-color: rgba(var(--sl-accent-rgb), 0.3);
-  --tag-border-color-hover: rgba(var(--sl-accent-rgb), 0.6);
-  --tag-radius: 1em;
-  --tag-padding-x: 0.65em;
-  --tag-padding-y: 0.18em;
-  --tag-weight: 500;
-  --tag-decoration: none;
+	--tag-color: var(--sl-accent);
+	--tag-background: color-mix(
+		in srgb,
+		var(--sl-accent) calc(var(--sl-wash) * 100%),
+		transparent
+	);
+	--tag-background-hover: color-mix(
+		in srgb,
+		var(--sl-accent) calc(var(--sl-wash-strong) * 100%),
+		transparent
+	);
+	--tag-border-width: 1px;
+	--tag-border-color: color-mix(in srgb, var(--sl-accent) 30%, transparent);
+	--tag-border-color-hover: color-mix(
+		in srgb,
+		var(--sl-accent) 60%,
+		transparent
+	);
+	--tag-radius: 1em;
+	--tag-padding-x: 0.65em;
+	--tag-padding-y: 0.18em;
+	--tag-weight: 500;
+	--tag-decoration: none;
 }
 
 /* CSS cannot hash a string, so the tag's first character selects the bucket.
    Eight buckets, letters stepping through the spectrum and wrapping every
    eighth. Yellow sits this one out — tag text is small ink on a light wash. */
 body:not(.slate-plain-tags) {
-  --slate-tag-1: var(--slate-rot-1);
-  --slate-tag-2: var(--slate-rot-2);
-  --slate-tag-3: var(--slate-rot-3);
-  --slate-tag-4: var(--slate-rot-4);
-  --slate-tag-5: var(--slate-rot-5);
-  --slate-tag-6: var(--slate-rot-6);
-  --slate-tag-7: var(--slate-rot-7);
-  --slate-tag-8: var(--slate-rot-8);
+	--slate-tag-1: var(--slate-rot-1);
+	--slate-tag-2: var(--slate-rot-2);
+	--slate-tag-3: var(--slate-rot-3);
+	--slate-tag-4: var(--slate-rot-4);
+	--slate-tag-5: var(--slate-rot-5);
+	--slate-tag-6: var(--slate-rot-6);
+	--slate-tag-7: var(--slate-rot-7);
+	--slate-tag-8: var(--slate-rot-8);
 }
 
 body:not(.slate-plain-tags) a.tag[href^="#a" i],
 body:not(.slate-plain-tags) a.tag[href^="#i" i],
 body:not(.slate-plain-tags) a.tag[href^="#q" i],
-body:not(.slate-plain-tags) a.tag[href^="#y" i] { --slate-tag: var(--slate-tag-1); }
+body:not(.slate-plain-tags) a.tag[href^="#y" i] {
+	--slate-tag: var(--slate-tag-1);
+}
 body:not(.slate-plain-tags) a.tag[href^="#b" i],
 body:not(.slate-plain-tags) a.tag[href^="#j" i],
 body:not(.slate-plain-tags) a.tag[href^="#r" i],
-body:not(.slate-plain-tags) a.tag[href^="#z" i] { --slate-tag: var(--slate-tag-2); }
+body:not(.slate-plain-tags) a.tag[href^="#z" i] {
+	--slate-tag: var(--slate-tag-2);
+}
 body:not(.slate-plain-tags) a.tag[href^="#c" i],
 body:not(.slate-plain-tags) a.tag[href^="#k" i],
-body:not(.slate-plain-tags) a.tag[href^="#s" i] { --slate-tag: var(--slate-tag-3); }
+body:not(.slate-plain-tags) a.tag[href^="#s" i] {
+	--slate-tag: var(--slate-tag-3);
+}
 body:not(.slate-plain-tags) a.tag[href^="#d" i],
 body:not(.slate-plain-tags) a.tag[href^="#l" i],
-body:not(.slate-plain-tags) a.tag[href^="#t" i] { --slate-tag: var(--slate-tag-4); }
+body:not(.slate-plain-tags) a.tag[href^="#t" i] {
+	--slate-tag: var(--slate-tag-4);
+}
 body:not(.slate-plain-tags) a.tag[href^="#e" i],
 body:not(.slate-plain-tags) a.tag[href^="#m" i],
-body:not(.slate-plain-tags) a.tag[href^="#u" i] { --slate-tag: var(--slate-tag-5); }
+body:not(.slate-plain-tags) a.tag[href^="#u" i] {
+	--slate-tag: var(--slate-tag-5);
+}
 body:not(.slate-plain-tags) a.tag[href^="#f" i],
 body:not(.slate-plain-tags) a.tag[href^="#n" i],
-body:not(.slate-plain-tags) a.tag[href^="#v" i] { --slate-tag: var(--slate-tag-6); }
+body:not(.slate-plain-tags) a.tag[href^="#v" i] {
+	--slate-tag: var(--slate-tag-6);
+}
 body:not(.slate-plain-tags) a.tag[href^="#g" i],
 body:not(.slate-plain-tags) a.tag[href^="#o" i],
-body:not(.slate-plain-tags) a.tag[href^="#w" i] { --slate-tag: var(--slate-tag-7); }
+body:not(.slate-plain-tags) a.tag[href^="#w" i] {
+	--slate-tag: var(--slate-tag-7);
+}
 body:not(.slate-plain-tags) a.tag[href^="#h" i],
 body:not(.slate-plain-tags) a.tag[href^="#p" i],
 body:not(.slate-plain-tags) a.tag[href^="#x" i],
@@ -941,37 +2197,55 @@ body:not(.slate-plain-tags) a.tag[href^="#5"],
 body:not(.slate-plain-tags) a.tag[href^="#6"],
 body:not(.slate-plain-tags) a.tag[href^="#7"],
 body:not(.slate-plain-tags) a.tag[href^="#8"],
-body:not(.slate-plain-tags) a.tag[href^="#9"] { --slate-tag: var(--slate-tag-8); }
+body:not(.slate-plain-tags) a.tag[href^="#9"] {
+	--slate-tag: var(--slate-tag-8);
+}
 
 body:not(.slate-plain-tags) a.tag[style],
 body:not(.slate-plain-tags) a.tag {
-  --tag-color: rgb(var(--slate-tag, var(--sl-accent-rgb)));
-  --tag-background: rgba(var(--slate-tag, var(--sl-accent-rgb)), var(--sl-wash));
-  --tag-background-hover: rgba(var(--slate-tag, var(--sl-accent-rgb)), var(--sl-wash-strong));
-  --tag-border-color: rgba(var(--slate-tag, var(--sl-accent-rgb)), 0.35);
-  --tag-border-color-hover: rgba(var(--slate-tag, var(--sl-accent-rgb)), 0.65);
+	--tag-color: var(--slate-tag, var(--sl-accent));
+	--tag-background: color-mix(
+		in srgb,
+		var(--slate-tag, var(--sl-accent)) calc(var(--sl-wash) * 100%),
+		transparent
+	);
+	--tag-background-hover: color-mix(
+		in srgb,
+		var(--slate-tag, var(--sl-accent)) calc(var(--sl-wash-strong) * 100%),
+		transparent
+	);
+	--tag-border-color: color-mix(
+		in srgb,
+		var(--slate-tag, var(--sl-accent)) 35%,
+		transparent
+	);
+	--tag-border-color-hover: color-mix(
+		in srgb,
+		var(--slate-tag, var(--sl-accent)) 65%,
+		transparent
+	);
 }
 
 /* Live preview has no tag name in the DOM, so it takes the accent pill. */
 .markdown-source-view.mod-cm6 .cm-hashtag {
-  background: var(--tag-background);
-  color: var(--tag-color);
-  border: 1px solid rgba(var(--sl-accent-rgb), 0.3);
-  border-left-width: 0;
-  border-right-width: 0;
-  padding: var(--tag-padding-y) 0;
+	background: var(--tag-background);
+	color: var(--tag-color);
+	border: 1px solid color-mix(in srgb, var(--sl-accent) 30%, transparent);
+	border-left-width: 0;
+	border-right-width: 0;
+	padding: var(--tag-padding-y) 0;
 }
 
 .markdown-source-view.mod-cm6 .cm-hashtag-begin {
-  border-left-width: 1px;
-  border-radius: var(--tag-radius) 0 0 var(--tag-radius);
-  padding-left: var(--tag-padding-x);
+	border-left-width: 1px;
+	border-radius: var(--tag-radius) 0 0 var(--tag-radius);
+	padding-left: var(--tag-padding-x);
 }
 
 .markdown-source-view.mod-cm6 .cm-hashtag-end {
-  border-right-width: 1px;
-  border-radius: 0 var(--tag-radius) var(--tag-radius) 0;
-  padding-right: var(--tag-padding-x);
+	border-right-width: 1px;
+	border-radius: 0 var(--tag-radius) var(--tag-radius) 0;
+	padding-right: var(--tag-padding-x);
 }
 
 /* ---------------------------------------------------------------------------
@@ -979,18 +2253,35 @@ body:not(.slate-plain-tags) a.tag {
    ------------------------------------------------------------------------ */
 
 body {
-  --nav-item-color: var(--sl-muted);
-  --nav-item-color-hover: var(--sl-text);
-  --nav-item-color-active: var(--sl-text);
-  --nav-item-color-selected: var(--sl-text);
-  --nav-item-background-hover: rgba(var(--sl-primary-rgb), 0.09);
-  --nav-item-background-active: rgba(var(--sl-primary-rgb), 0.14);
-  --nav-item-background-selected: rgba(var(--sl-primary-rgb), 0.14);
-  --nav-item-weight-active: 600;
-  --nav-indentation-guide-color: rgba(var(--sl-gray-rgb), 0.22);
-  --nav-file-tag: var(--sl-purple);
-  --nav-collapse-icon-color: var(--sl-muted);
-  --nav-collapse-icon-color-collapsed: var(--sl-orange);
+	--nav-item-color: var(--sl-muted);
+	/* Hover keeps the resting text everywhere in the sidebars: core's tree-item
+	   hover rule swaps color and weight through these variables, so pin them
+	   to the resting values and let hover only lay down the background wash.
+	   The file explorer's depth pins below still override per element. */
+	--nav-item-color-hover: var(--nav-item-color);
+	--nav-item-weight-hover: var(--nav-item-weight);
+	--nav-item-color-active: var(--sl-text);
+	--nav-item-color-selected: var(--sl-text);
+	--nav-item-background-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 9%,
+		transparent
+	);
+	--nav-item-background-active: color-mix(
+		in srgb,
+		var(--sl-primary) 14%,
+		transparent
+	);
+	--nav-item-background-selected: color-mix(
+		in srgb,
+		var(--sl-primary) 14%,
+		transparent
+	);
+	--nav-item-weight-active: 600;
+	--nav-indentation-guide-color: rgba(var(--sl-gray-rgb), 0.22);
+	--nav-file-tag: var(--sl-purple);
+	--nav-collapse-icon-color: var(--sl-muted);
+	--nav-collapse-icon-color-collapsed: var(--sl-orange);
 }
 
 /* Depth 1 through 6, one hue per level, sharing the ladder in section 16.
@@ -1005,72 +2296,115 @@ body {
    The variable lands on .nav-folder rather than on the title so the folder's
    own children container inherits it for the left rule. */
 body:not(.slate-plain-folders) .nav-files-container .nav-folder {
-  --slate-depth: var(--slate-depth-1);
+	--slate-depth: var(--slate-depth-1);
 }
 body:not(.slate-plain-folders) .nav-folder .nav-folder {
-  --slate-depth: var(--slate-depth-2);
+	--slate-depth: var(--slate-depth-2);
 }
 body:not(.slate-plain-folders) .nav-folder .nav-folder .nav-folder {
-  --slate-depth: var(--slate-depth-3);
+	--slate-depth: var(--slate-depth-3);
 }
 body:not(.slate-plain-folders) .nav-folder .nav-folder .nav-folder .nav-folder {
-  --slate-depth: var(--slate-depth-4);
+	--slate-depth: var(--slate-depth-4);
 }
-body:not(.slate-plain-folders) .nav-folder .nav-folder .nav-folder .nav-folder .nav-folder {
-  --slate-depth: var(--slate-depth-5);
+body:not(.slate-plain-folders)
+	.nav-folder
+	.nav-folder
+	.nav-folder
+	.nav-folder
+	.nav-folder {
+	--slate-depth: var(--slate-depth-5);
 }
-body:not(.slate-plain-folders) .nav-folder .nav-folder .nav-folder .nav-folder .nav-folder .nav-folder {
-  --slate-depth: var(--slate-depth-6);
+body:not(.slate-plain-folders)
+	.nav-folder
+	.nav-folder
+	.nav-folder
+	.nav-folder
+	.nav-folder
+	.nav-folder {
+	--slate-depth: var(--slate-depth-6);
 }
 
 body:not(.slate-plain-folders) .nav-folder-title {
-  color: rgb(var(--slate-depth, var(--sl-muted-rgb)));
-  font-weight: 600;
+	color: var(--slate-depth, var(--sl-muted));
+	font-weight: 600;
+	/* Core's tree-item hover rule outranks these static styles and would swap
+	   the title to neutral color and inherited weight. Pin the hover variables
+	   to the resting values so hover only adds the depth wash. */
+	--nav-item-color-hover: var(--slate-depth, var(--sl-muted));
+	--nav-item-weight-hover: 600;
+	--nav-item-background-hover: color-mix(
+		in srgb,
+		var(--slate-depth, var(--sl-primary)) 12%,
+		transparent
+	);
 }
 
 body:not(.slate-plain-folders) .nav-folder-title .collapse-icon svg {
-  color: rgb(var(--slate-depth, var(--sl-muted-rgb)));
-  opacity: 0.8;
-}
-
-body:not(.slate-plain-folders) .nav-folder-title:hover {
-  background: rgba(var(--slate-depth, var(--sl-primary-rgb)), 0.12);
+	color: var(--slate-depth, var(--sl-muted));
+	opacity: 0.8;
 }
 
 /* Each folder's children container carries a rule in that folder's own hue. */
 body:not(.slate-plain-folders) .nav-folder .nav-folder-children {
-  border-left: 1px solid rgba(var(--slate-depth, var(--sl-gray-rgb)), var(--slate-rule-alpha));
+	border-left: 1px solid
+		color-mix(
+			in srgb,
+			var(--slate-depth, var(--sl-gray)) calc(var(--slate-rule-alpha) * 100%),
+			transparent
+		);
 }
 
 /* Files inherit their folder's hue at reduced strength, so a subtree reads as
    one block of color. The folder still leads: full strength and heavier. Files
    sitting at the vault root inherit nothing and fall back to the muted ink. */
 body:not(.slate-plain-folders) .nav-file-title {
-  color: rgba(var(--slate-depth, var(--sl-muted-rgb)), var(--slate-file-alpha));
-  font-weight: 400;
+	color: color-mix(
+		in srgb,
+		var(--slate-depth, var(--sl-muted)) calc(var(--slate-file-alpha) * 100%),
+		transparent
+	);
+	font-weight: 400;
+	/* Same pinning as folder titles: hover keeps the resting text and only lays
+	   down the depth wash. */
+	--nav-item-color-hover: color-mix(
+		in srgb,
+		var(--slate-depth, var(--sl-muted)) calc(var(--slate-file-alpha) * 100%),
+		transparent
+	);
+	--nav-item-weight-hover: 400;
+	--nav-item-background-hover: color-mix(
+		in srgb,
+		var(--slate-depth, var(--sl-primary)) 12%,
+		transparent
+	);
 }
 
-body:not(.slate-plain-folders) .nav-file-title:hover,
 body:not(.slate-plain-folders) .nav-file-title.is-active,
 body:not(.slate-plain-folders) .nav-file-title.has-focus {
-  color: rgb(var(--slate-depth, var(--sl-text-rgb)));
+	color: var(--slate-depth, var(--sl-text));
 }
 
 body:not(.slate-plain-folders) .nav-file-title.is-active {
-  background: rgba(var(--slate-depth, var(--sl-primary-rgb)), 0.14);
-  font-weight: 600;
+	background: color-mix(
+		in srgb,
+		var(--slate-depth, var(--sl-primary)) 14%,
+		transparent
+	);
+	font-weight: 600;
 }
 
 body.slate-plain-folders .nav-file-title {
-  color: var(--nav-item-color);
+	color: var(--nav-item-color);
 }
 
 body.slate-plain-folders .nav-file-title.is-active .nav-file-title-content {
-  color: var(--sl-primary);
+	color: var(--sl-primary);
 }
 
 .workspace-leaf-content[data-type="search"] .search-result-file-title {
-  color: var(--sl-primary);
+	color: var(--sl-primary);
+	--nav-item-color-hover: var(--sl-primary);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1078,38 +2412,96 @@ body.slate-plain-folders .nav-file-title.is-active .nav-file-title-content {
    ------------------------------------------------------------------------ */
 
 body {
-  --table-header-background: rgba(var(--sl-primary-rgb), 0.12);
-  --table-header-background-hover: rgba(var(--sl-primary-rgb), 0.18);
-  --table-header-color: var(--sl-primary);
-  --table-header-weight: 650;
-  --table-row-background-hover: rgba(var(--sl-primary-rgb), 0.06);
-  --table-row-alt-background: rgba(var(--sl-surface-rgb), 0.55);
-  --table-border-color: var(--sl-border);
-  --table-border-width: 1px;
-  --table-column-alt-background: transparent;
-  --table-selection: rgba(var(--sl-primary-rgb), 0.18);
+	--table-header-background: color-mix(
+		in srgb,
+		var(--sl-primary) 12%,
+		transparent
+	);
+	--table-header-background-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 18%,
+		transparent
+	);
+	--table-header-color: var(--sl-primary);
+	--table-header-weight: 650;
+	--table-row-background-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 6%,
+		transparent
+	);
+	/* Core paints odd-row hover from a separate variable whose default is
+	   transparent, so striped and unstriped tables both lost the hover wash on
+	   odd rows. Mirror the normal hover so every row highlights the same. */
+	--table-row-alt-background-hover: var(--table-row-background-hover);
+	--table-border-color: var(--sl-border);
+	--table-border-width: 1px;
+	--table-column-alt-background: transparent;
+	--table-selection: color-mix(in srgb, var(--sl-primary) 18%, transparent);
 
-  --metadata-background: rgba(var(--sl-surface-rgb), 0.6);
-  --metadata-divider-color: var(--sl-border);
-  --metadata-label-text-color: var(--sl-muted);
-  --metadata-input-text-color: var(--sl-text);
-  --metadata-sidebar-label-text-color: var(--sl-muted);
-  --metadata-property-radius: var(--radius-s);
+	--metadata-background: rgba(var(--sl-surface-rgb), 0.6);
+	--metadata-divider-color: var(--sl-border);
+	--metadata-label-text-color: var(--sl-muted);
+	--metadata-input-text-color: var(--sl-text);
+	--metadata-sidebar-label-text-color: var(--sl-muted);
+	--metadata-property-radius: var(--radius-s);
 }
 
 .markdown-rendered table {
-  border-radius: var(--radius-m);
-  overflow: hidden;
+	border-radius: var(--ds-table-radius, 8px);
+	overflow: hidden;
+}
+
+/* Zebra striping is opt-in. Core paints odd rows from
+   --table-row-alt-background; it stays transparent while the toggle is off. */
+body.ds-table-zebra {
+	--table-row-alt-background: rgba(var(--sl-surface-rgb), 0.55);
+}
+
+/* Financial-report tables: horizontal hairlines only, no grid, no fills. The
+   header and the last row take a stronger rule, like a statement's closing
+   line. The variant intentionally ignores the zebra toggle and the corner
+   radius — straight edges and a bare table are the point. */
+body.ds-table-finance {
+	--table-header-background: transparent;
+	--table-header-background-hover: transparent;
+	--table-header-color: var(--sl-muted);
+	--table-row-alt-background: transparent;
+	--table-row-background-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 4%,
+		transparent
+	);
+}
+
+body.ds-table-finance .markdown-rendered table {
+	border-radius: 0;
+}
+
+body.ds-table-finance .markdown-rendered :is(th, td) {
+	border: none;
+	border-bottom: 1px solid var(--sl-border);
+}
+
+body.ds-table-finance .markdown-rendered thead th {
+	border-bottom: 2px solid color-mix(in srgb, var(--sl-text) 55%, transparent);
+}
+
+body.ds-table-finance .markdown-rendered tbody tr:last-child td {
+	border-bottom: 2px solid color-mix(in srgb, var(--sl-text) 55%, transparent);
 }
 
 .metadata-property-key-input {
-  font-weight: 550;
+	font-weight: 550;
 }
 
 /* Property values that are internal links or tags keep their hue. */
 .metadata-property[data-property-key] .multi-select-pill {
-  background: rgba(var(--sl-accent-rgb), var(--sl-wash));
-  color: var(--sl-accent);
+	background: color-mix(
+		in srgb,
+		var(--sl-accent) calc(var(--sl-wash) * 100%),
+		transparent
+	);
+	color: var(--sl-accent);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1117,29 +2509,40 @@ body {
    ------------------------------------------------------------------------ */
 
 body {
-  --graph-line: rgba(var(--sl-gray-rgb), 0.35);
-  --graph-node: var(--sl-primary);
-  --graph-node-focused: var(--sl-orange);
-  --graph-node-tag: var(--sl-teal);
-  --graph-node-attachment: var(--sl-purple);
-  --graph-node-unresolved: var(--sl-red);
-  --graph-text: var(--sl-text);
+	--graph-line: rgba(var(--sl-gray-rgb), 0.35);
+	--graph-node: var(--sl-primary);
+	--graph-node-focused: var(--sl-orange);
+	--graph-node-tag: var(--sl-teal);
+	--graph-node-attachment: var(--sl-purple);
+	--graph-node-unresolved: var(--sl-red);
+	--graph-text: var(--sl-text);
 }
 
 /* ---------------------------------------------------------------------------
    14. Canvas
    ------------------------------------------------------------------------ */
 
+/* Obsidian 1.13 rewired the canvas palette: core now consumes --canvas-color
+   as a *full color* — `border: solid var(--canvas-color)` and
+   `color-mix(in oklch, var(--canvas-color) 70%, transparent)` — where 1.8
+   consumed an RGB triplet through `rgb(var(--canvas-color))`. Feeding the old
+   triplet form into the new syntax makes both the border and the themed card
+   fill invalid at computed-value time, which reads as "color does nothing".
+   Output full colors; the triplet spectrum stays available for anything that
+   still wants the components. */
 body {
-  --canvas-background: var(--sl-bg);
-  --canvas-card-label-color: var(--sl-muted);
-  --canvas-dot-pattern: rgba(var(--sl-gray-rgb), 0.28);
-  --canvas-color-1: var(--sl-red-rgb);
-  --canvas-color-2: var(--sl-orange-rgb);
-  --canvas-color-3: var(--sl-yellow-rgb);
-  --canvas-color-4: var(--sl-green-rgb);
-  --canvas-color-5: var(--sl-cyan-rgb);
-  --canvas-color-6: var(--sl-purple-rgb);
+	--canvas-background: var(--sl-bg);
+	--canvas-card-label-color: var(--sl-muted);
+	--canvas-dot-pattern: rgba(
+		var(--sl-gray-rgb),
+		var(--ds-canvas-dot-opacity, 0.28)
+	);
+	--canvas-color-1: var(--sl-red);
+	--canvas-color-2: var(--sl-orange);
+	--canvas-color-3: var(--sl-yellow);
+	--canvas-color-4: var(--sl-green);
+	--canvas-color-5: var(--sl-cyan);
+	--canvas-color-6: var(--sl-purple);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1152,25 +2555,25 @@ body {
 .workspace-split > hr,
 .workspace-tabs hr,
 .workspace-leaf-content:not([data-type="markdown"]) hr {
-  background-image: none;
-  height: auto;
-  opacity: 1;
+	background-image: none;
+	height: auto;
+	opacity: 1;
 }
 
 .workspace-leaf-content:not([data-type="markdown"]) hr {
-  border: none;
-  border-top: 1px solid rgba(var(--sl-border-rgb), 0.55);
+	border: none;
+	border-top: 1px solid rgba(var(--sl-border-rgb), 0.55);
 }
 
 /* Active tab flags itself with a primary top rule. */
 .workspace-tab-header.is-active {
-  box-shadow: inset 0 2px 0 0 var(--sl-primary);
+	box-shadow: inset 0 2px 0 0 var(--sl-primary);
 }
 
 /* Sidebar section headers. */
 .workspace-leaf-content .nav-header,
 .workspace-leaf-content .view-header-title {
-  color: var(--sl-text);
+	color: var(--sl-text);
 }
 
 /* The note's name is on its tab. Repeating it in the view header and again as
@@ -1182,70 +2585,70 @@ body {
    folder to a few characters once a note is more than two deep, so it reads as
    noise rather than navigation. */
 body:not(.slate-show-view-header-title) .view-header-title-container {
-  display: none;
+	display: none;
 }
 
 body:not(.slate-show-breadcrumbs) .view-header-title-parent {
-  display: none;
+	display: none;
 }
 
 body:not(.slate-show-inline-title) .inline-title {
-  display: none;
+	display: none;
 }
 
 .view-header-title-parent .view-header-breadcrumb {
-  color: var(--sl-muted);
+	color: var(--sl-muted);
 }
 
 /* Status bar reads as ancillary, not primary UI. */
 .status-bar-item {
-  color: var(--sl-muted);
+	color: var(--sl-muted);
 }
 
 /* Search hits and command palette matches use the accent, not the highlight. */
 .suggestion-highlight,
 .search-result-file-matched-text {
-  color: var(--sl-orange);
-  background: rgba(var(--sl-orange-rgb), var(--sl-wash));
+	color: var(--sl-orange);
+	background: rgba(var(--sl-orange-rgb), var(--sl-wash));
 }
 
 .suggestion-item.is-selected {
-  background: rgba(var(--sl-primary-rgb), 0.16);
+	background: color-mix(in srgb, var(--sl-primary) 16%, transparent);
 }
 
 /* Buttons. */
 button.mod-cta,
 .mod-cta {
-  color: var(--text-on-accent);
+	color: var(--text-on-accent);
 }
 
 button.mod-warning {
-  background: var(--sl-red);
-  color: #ffffff;
+	background: var(--sl-red);
+	color: #ffffff;
 }
 
 /* Sliders, toggles. */
 .checkbox-container.is-enabled {
-  background: var(--sl-accent);
+	background: var(--sl-accent);
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  background: var(--sl-primary);
+	background: var(--sl-primary);
 }
 
 /* Vim mode cursor, if enabled, uses the accent for visibility. */
 .cm-vim-cursor-layer .cm-cursor {
-  background: rgba(var(--sl-accent-rgb), 0.55);
+	background: color-mix(in srgb, var(--sl-accent) 55%, transparent);
 }
 
 /* Active line and selection in the editor. */
 .markdown-source-view.mod-cm6 .cm-active-line {
-  background: rgba(var(--sl-primary-rgb), 0.05);
+	background: color-mix(in srgb, var(--sl-primary) 5%, transparent);
 }
 
 .markdown-source-view.mod-cm6 .cm-selectionBackground,
 .markdown-source-view.mod-cm6 .cm-line::selection {
-  background: var(--text-selection);
+	background: var(--text-selection);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1262,49 +2665,54 @@ input[type="range"]::-webkit-slider-thumb {
    level's triplet because box-shadow needs the components, not a color. */
 .markdown-rendered .list-bullet::after,
 .markdown-source-view.mod-cm6 .list-bullet::after {
-  box-shadow: 0 0 0 3px rgba(var(--slate-marker, var(--sl-gray-rgb)), var(--slate-halo));
+	box-shadow: 0 0 0 3px
+		color-mix(
+			in srgb,
+			var(--slate-marker, var(--sl-gray)) calc(var(--slate-halo) * 100%),
+			transparent
+		);
 }
 
 /* Reading view: nesting is real DOM nesting, so the cascade does the work. */
 .markdown-rendered ul,
 .markdown-rendered ol {
-  --list-marker-color: rgb(var(--slate-depth-1));
-  --slate-marker: var(--slate-depth-1);
-  --list-marker-color-collapsed: rgb(var(--slate-depth-1));
+	--list-marker-color: var(--slate-depth-1);
+	--slate-marker: var(--slate-depth-1);
+	--list-marker-color-collapsed: var(--slate-depth-1);
 }
 .markdown-rendered ul ul,
 .markdown-rendered ul ol,
 .markdown-rendered ol ul,
 .markdown-rendered ol ol {
-  --list-marker-color: rgb(var(--slate-depth-2));
-  --slate-marker: var(--slate-depth-2);
-  --list-marker-color-collapsed: rgb(var(--slate-depth-2));
+	--list-marker-color: var(--slate-depth-2);
+	--slate-marker: var(--slate-depth-2);
+	--list-marker-color-collapsed: var(--slate-depth-2);
 }
 .markdown-rendered ul ul ul,
 .markdown-rendered ol ol ol,
 .markdown-rendered ul ol ul,
 .markdown-rendered ol ul ol {
-  --list-marker-color: rgb(var(--slate-depth-3));
-  --slate-marker: var(--slate-depth-3);
-  --list-marker-color-collapsed: rgb(var(--slate-depth-3));
+	--list-marker-color: var(--slate-depth-3);
+	--slate-marker: var(--slate-depth-3);
+	--list-marker-color-collapsed: var(--slate-depth-3);
 }
 .markdown-rendered ul ul ul ul,
 .markdown-rendered ol ol ol ol {
-  --list-marker-color: rgb(var(--slate-depth-4));
-  --slate-marker: var(--slate-depth-4);
-  --list-marker-color-collapsed: rgb(var(--slate-depth-4));
+	--list-marker-color: var(--slate-depth-4);
+	--slate-marker: var(--slate-depth-4);
+	--list-marker-color-collapsed: var(--slate-depth-4);
 }
 .markdown-rendered ul ul ul ul ul,
 .markdown-rendered ol ol ol ol ol {
-  --list-marker-color: rgb(var(--slate-depth-5));
-  --slate-marker: var(--slate-depth-5);
-  --list-marker-color-collapsed: rgb(var(--slate-depth-5));
+	--list-marker-color: var(--slate-depth-5);
+	--slate-marker: var(--slate-depth-5);
+	--list-marker-color-collapsed: var(--slate-depth-5);
 }
 .markdown-rendered ul ul ul ul ul ul,
 .markdown-rendered ol ol ol ol ol ol {
-  --list-marker-color: rgb(var(--slate-depth-6));
-  --slate-marker: var(--slate-depth-6);
-  --list-marker-color-collapsed: rgb(var(--slate-depth-6));
+	--list-marker-color: var(--slate-depth-6);
+	--slate-marker: var(--slate-depth-6);
+	--list-marker-color-collapsed: var(--slate-depth-6);
 }
 
 /* Live preview tags each list line with its depth as HyperMD-list-line-N, and
@@ -1312,93 +2720,149 @@ input[type="range"]::-webkit-slider-thumb {
    ladder works there too. (The class is absent from Obsidian's own stylesheet
    but present in the DOM — do not conclude it is unavailable from app.css.) */
 .markdown-source-view.mod-cm6 .HyperMD-list-line-1 {
-  --list-marker-color: rgb(var(--slate-depth-1));
-  --slate-marker: var(--slate-depth-1);
-  --list-marker-color-hover: rgb(var(--slate-depth-1));
+	--list-marker-color: var(--slate-depth-1);
+	--slate-marker: var(--slate-depth-1);
+	--list-marker-color-hover: var(--slate-depth-1);
 }
 .markdown-source-view.mod-cm6 .HyperMD-list-line-2 {
-  --list-marker-color: rgb(var(--slate-depth-2));
-  --slate-marker: var(--slate-depth-2);
-  --list-marker-color-hover: rgb(var(--slate-depth-2));
+	--list-marker-color: var(--slate-depth-2);
+	--slate-marker: var(--slate-depth-2);
+	--list-marker-color-hover: var(--slate-depth-2);
 }
 .markdown-source-view.mod-cm6 .HyperMD-list-line-3 {
-  --list-marker-color: rgb(var(--slate-depth-3));
-  --slate-marker: var(--slate-depth-3);
-  --list-marker-color-hover: rgb(var(--slate-depth-3));
+	--list-marker-color: var(--slate-depth-3);
+	--slate-marker: var(--slate-depth-3);
+	--list-marker-color-hover: var(--slate-depth-3);
 }
 .markdown-source-view.mod-cm6 .HyperMD-list-line-4 {
-  --list-marker-color: rgb(var(--slate-depth-4));
-  --slate-marker: var(--slate-depth-4);
-  --list-marker-color-hover: rgb(var(--slate-depth-4));
+	--list-marker-color: var(--slate-depth-4);
+	--slate-marker: var(--slate-depth-4);
+	--list-marker-color-hover: var(--slate-depth-4);
 }
 .markdown-source-view.mod-cm6 .HyperMD-list-line-5 {
-  --list-marker-color: rgb(var(--slate-depth-5));
-  --slate-marker: var(--slate-depth-5);
-  --list-marker-color-hover: rgb(var(--slate-depth-5));
+	--list-marker-color: var(--slate-depth-5);
+	--slate-marker: var(--slate-depth-5);
+	--list-marker-color-hover: var(--slate-depth-5);
 }
 .markdown-source-view.mod-cm6 .HyperMD-list-line-6 {
-  --list-marker-color: rgb(var(--slate-depth-6));
-  --slate-marker: var(--slate-depth-6);
-  --list-marker-color-hover: rgb(var(--slate-depth-6));
+	--list-marker-color: var(--slate-depth-6);
+	--slate-marker: var(--slate-depth-6);
+	--list-marker-color-hover: var(--slate-depth-6);
 }
 
 /* Guides key off .cm-indent position, one span per indentation step, so each
    vertical rule takes the hue of the level it introduces. */
 .markdown-source-view.mod-cm6 .cm-indent:nth-of-type(1) {
-  --indentation-guide-color: rgba(var(--slate-depth-1), var(--slate-guide-alpha));
+	--indentation-guide-color: color-mix(
+		in srgb,
+		var(--slate-depth-1) calc(var(--slate-guide-alpha) * 100%),
+		transparent
+	);
 }
 .markdown-source-view.mod-cm6 .cm-indent:nth-of-type(2) {
-  --indentation-guide-color: rgba(var(--slate-depth-2), var(--slate-guide-alpha));
+	--indentation-guide-color: color-mix(
+		in srgb,
+		var(--slate-depth-2) calc(var(--slate-guide-alpha) * 100%),
+		transparent
+	);
 }
 .markdown-source-view.mod-cm6 .cm-indent:nth-of-type(3) {
-  --indentation-guide-color: rgba(var(--slate-depth-3), var(--slate-guide-alpha));
+	--indentation-guide-color: color-mix(
+		in srgb,
+		var(--slate-depth-3) calc(var(--slate-guide-alpha) * 100%),
+		transparent
+	);
 }
 .markdown-source-view.mod-cm6 .cm-indent:nth-of-type(4) {
-  --indentation-guide-color: rgba(var(--slate-depth-4), var(--slate-guide-alpha));
+	--indentation-guide-color: color-mix(
+		in srgb,
+		var(--slate-depth-4) calc(var(--slate-guide-alpha) * 100%),
+		transparent
+	);
 }
 .markdown-source-view.mod-cm6 .cm-indent:nth-of-type(5) {
-  --indentation-guide-color: rgba(var(--slate-depth-5), var(--slate-guide-alpha));
+	--indentation-guide-color: color-mix(
+		in srgb,
+		var(--slate-depth-5) calc(var(--slate-guide-alpha) * 100%),
+		transparent
+	);
 }
 .markdown-source-view.mod-cm6 .cm-indent:nth-of-type(6) {
-  --indentation-guide-color: rgba(var(--slate-depth-6), var(--slate-guide-alpha));
+	--indentation-guide-color: color-mix(
+		in srgb,
+		var(--slate-depth-6) calc(var(--slate-guide-alpha) * 100%),
+		transparent
+	);
 }
 
 /* Nested quotes cycle the same ladder on the border and the wash. */
 .markdown-rendered blockquote {
-  --blockquote-border-color: rgb(var(--slate-depth-1));
-  --blockquote-background-color: rgba(var(--slate-depth-1), var(--slate-quote-wash));
+	--blockquote-border-color: var(--slate-depth-1);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--slate-depth-1) calc(var(--slate-quote-wash) * 100%),
+		transparent
+	);
 }
 .markdown-rendered blockquote blockquote {
-  --blockquote-border-color: rgb(var(--slate-depth-2));
-  --blockquote-background-color: rgba(var(--slate-depth-2), var(--slate-quote-wash));
+	--blockquote-border-color: var(--slate-depth-2);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--slate-depth-2) calc(var(--slate-quote-wash) * 100%),
+		transparent
+	);
 }
 .markdown-rendered blockquote blockquote blockquote {
-  --blockquote-border-color: rgb(var(--slate-depth-3));
-  --blockquote-background-color: rgba(var(--slate-depth-3), var(--slate-quote-wash));
+	--blockquote-border-color: var(--slate-depth-3);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--slate-depth-3) calc(var(--slate-quote-wash) * 100%),
+		transparent
+	);
 }
 .markdown-rendered blockquote blockquote blockquote blockquote {
-  --blockquote-border-color: rgb(var(--slate-depth-4));
-  --blockquote-background-color: rgba(var(--slate-depth-4), var(--slate-quote-wash));
+	--blockquote-border-color: var(--slate-depth-4);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--slate-depth-4) calc(var(--slate-quote-wash) * 100%),
+		transparent
+	);
 }
 
 /* Live preview quotes carry HyperMD-quote-N the same way. The unnumbered rule
    comes first as the floor for depths past the ladder; the numbered ones match
    its specificity and follow, so they win. */
 .markdown-source-view.mod-cm6.is-live-preview .HyperMD-quote {
-  --blockquote-border-color: rgb(var(--slate-depth-1));
-  --blockquote-background-color: rgba(var(--slate-depth-1), var(--slate-quote-wash));
+	--blockquote-border-color: var(--slate-depth-1);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--slate-depth-1) calc(var(--slate-quote-wash) * 100%),
+		transparent
+	);
 }
 .markdown-source-view.mod-cm6.is-live-preview .HyperMD-quote-2 {
-  --blockquote-border-color: rgb(var(--slate-depth-2));
-  --blockquote-background-color: rgba(var(--slate-depth-2), var(--slate-quote-wash));
+	--blockquote-border-color: var(--slate-depth-2);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--slate-depth-2) calc(var(--slate-quote-wash) * 100%),
+		transparent
+	);
 }
 .markdown-source-view.mod-cm6.is-live-preview .HyperMD-quote-3 {
-  --blockquote-border-color: rgb(var(--slate-depth-3));
-  --blockquote-background-color: rgba(var(--slate-depth-3), var(--slate-quote-wash));
+	--blockquote-border-color: var(--slate-depth-3);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--slate-depth-3) calc(var(--slate-quote-wash) * 100%),
+		transparent
+	);
 }
 .markdown-source-view.mod-cm6.is-live-preview .HyperMD-quote-4 {
-  --blockquote-border-color: rgb(var(--slate-depth-4));
-  --blockquote-background-color: rgba(var(--slate-depth-4), var(--slate-quote-wash));
+	--blockquote-border-color: var(--slate-depth-4);
+	--blockquote-background-color: color-mix(
+		in srgb,
+		var(--slate-depth-4) calc(var(--slate-quote-wash) * 100%),
+		transparent
+	);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1406,31 +2870,31 @@ input[type="range"]::-webkit-slider-thumb {
    ------------------------------------------------------------------------ */
 
 body {
-  --inline-title-color: var(--sl-primary);
-  --inline-title-weight: 700;
-  --inline-title-size: 2.1rem;
+	--inline-title-color: var(--sl-primary);
+	--inline-title-weight: 700;
+	--inline-title-size: 2.1rem;
 }
 
 /* Gutter: quiet numbers, primary on the active line, orange fold arrows to
    match the collapsed-folder indicator. */
 .markdown-source-view.mod-cm6 .cm-lineNumbers .cm-gutterElement {
-  color: var(--text-faint);
+	color: var(--text-faint);
 }
 
 .markdown-source-view.mod-cm6 .cm-lineNumbers .cm-gutterElement.cm-active {
-  color: var(--sl-primary);
-  font-weight: 600;
+	color: var(--sl-primary);
+	font-weight: 600;
 }
 
 .markdown-source-view.mod-cm6 .cm-foldGutter .cm-gutterElement svg,
 .markdown-source-view.mod-cm6 .cm-fold-indicator .collapse-icon svg {
-  color: var(--sl-orange);
+	color: var(--sl-orange);
 }
 
 /* Markdown comments read as apparatus, not content. */
 .markdown-source-view.mod-cm6 .cm-comment {
-  color: var(--sl-gray);
-  font-style: italic;
+	color: var(--sl-gray);
+	font-style: italic;
 }
 
 /* Footnotes: reference and definition share the accent so the jump target is
@@ -1438,47 +2902,47 @@ body {
 .markdown-rendered .footnote-ref a,
 .markdown-rendered sup[id^="fnref"] a,
 .markdown-source-view.mod-cm6 .cm-footref {
-  color: var(--sl-accent);
-  text-decoration: none;
-  font-weight: 600;
+	color: var(--sl-accent);
+	text-decoration: none;
+	font-weight: 600;
 }
 
 .markdown-rendered .footnote-backref {
-  color: var(--sl-accent);
+	color: var(--sl-accent);
 }
 
 .markdown-rendered .footnotes {
-  border-top: 1px solid rgba(var(--sl-border-rgb), 0.55);
-  color: var(--text-muted);
+	border-top: 1px solid rgba(var(--sl-border-rgb), 0.55);
+	color: var(--text-muted);
 }
 
 /* Math sits in the teal accent. */
 .markdown-rendered .math,
 .markdown-source-view.mod-cm6 .cm-math,
 .markdown-source-view.mod-cm6 .HyperMD-math {
-  color: var(--sl-teal);
+	color: var(--sl-teal);
 }
 
 /* Block identifiers and transclusion chrome. */
 .markdown-source-view.mod-cm6 .cm-blockid {
-  color: var(--sl-purple);
-  opacity: 0.7;
+	color: var(--sl-purple);
+	opacity: 0.7;
 }
 
 .markdown-embed-title,
 .markdown-embed .markdown-embed-link {
-  color: var(--sl-purple);
+	color: var(--sl-purple);
 }
 
 /* Link types. Plain note links keep the primary blue; these carve out the
    cases where the target is not simply another note. */
 .markdown-rendered a.internal-link[href*="#^"],
 .markdown-source-view.mod-cm6 .cm-link-alias[href*="#^"] {
-  color: var(--sl-purple);
+	color: var(--sl-purple);
 }
 
 .markdown-rendered a.internal-link[href*="#"]:not([href*="#^"]) {
-  color: var(--sl-cyan);
+	color: var(--sl-cyan);
 }
 
 .markdown-rendered a.internal-link[href$=".pdf"],
@@ -1491,23 +2955,23 @@ body {
 .markdown-rendered a.internal-link[href$=".mp4"],
 .markdown-rendered a.internal-link[href$=".mp3"],
 .markdown-rendered a.internal-link[href$=".canvas"] {
-  color: var(--sl-teal);
+	color: var(--sl-teal);
 }
 
 /* Frontmatter links and property values. */
 .metadata-link,
 .metadata-property .internal-link {
-  color: var(--sl-primary);
+	color: var(--sl-primary);
 }
 
 /* Editor affordances. */
 .markdown-source-view.mod-cm6 .cm-matchingBracket {
-  background: rgba(var(--sl-accent-rgb), 0.22);
-  color: var(--sl-accent);
+	background: color-mix(in srgb, var(--sl-accent) 22%, transparent);
+	color: var(--sl-accent);
 }
 
 .markdown-source-view.mod-cm6 .cm-nonmatchingBracket {
-  background: rgba(var(--sl-red-rgb), 0.22);
+	background: rgba(var(--sl-red-rgb), 0.22);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1518,77 +2982,88 @@ body {
    ------------------------------------------------------------------------ */
 
 .workspace-tab-header[data-type="markdown"] .workspace-tab-header-inner-icon {
-  color: var(--sl-primary);
+	color: var(--sl-primary);
 }
 .workspace-tab-header[data-type="canvas"] .workspace-tab-header-inner-icon,
 .workspace-tab-header[data-type="excalidraw"] .workspace-tab-header-inner-icon {
-  color: var(--sl-purple);
+	color: var(--sl-purple);
 }
 .workspace-tab-header[data-type="pdf"] .workspace-tab-header-inner-icon {
-  color: var(--sl-red);
+	color: var(--sl-red);
 }
 .workspace-tab-header[data-type="image"] .workspace-tab-header-inner-icon,
 .workspace-tab-header[data-type="video"] .workspace-tab-header-inner-icon,
 .workspace-tab-header[data-type="audio"] .workspace-tab-header-inner-icon {
-  color: var(--sl-green);
+	color: var(--sl-green);
 }
 .workspace-tab-header[data-type="graph"] .workspace-tab-header-inner-icon,
 .workspace-tab-header[data-type="localgraph"] .workspace-tab-header-inner-icon {
-  color: var(--sl-teal);
+	color: var(--sl-teal);
 }
 .workspace-tab-header[data-type="bases"] .workspace-tab-header-inner-icon {
-  color: var(--sl-orange);
+	color: var(--sl-orange);
 }
-.workspace-tab-header[data-type="file-explorer"] .workspace-tab-header-inner-icon {
-  color: var(--sl-orange);
+.workspace-tab-header[data-type="file-explorer"]
+	.workspace-tab-header-inner-icon {
+	color: var(--sl-orange);
 }
 .workspace-tab-header[data-type="search"] .workspace-tab-header-inner-icon,
-.workspace-tab-header[data-type="all-properties"] .workspace-tab-header-inner-icon {
-  color: var(--sl-cyan);
+.workspace-tab-header[data-type="all-properties"]
+	.workspace-tab-header-inner-icon {
+	color: var(--sl-cyan);
 }
 .workspace-tab-header[data-type="bookmarks"] .workspace-tab-header-inner-icon,
 .workspace-tab-header[data-type="starred"] .workspace-tab-header-inner-icon {
-  color: var(--sl-red);
+	color: var(--sl-red);
 }
 .workspace-tab-header[data-type="tag"] .workspace-tab-header-inner-icon {
-  color: var(--sl-accent);
+	color: var(--sl-accent);
 }
 .workspace-tab-header[data-type="outline"] .workspace-tab-header-inner-icon {
-  color: var(--sl-green);
+	color: var(--sl-green);
 }
 .workspace-tab-header[data-type="backlink"] .workspace-tab-header-inner-icon,
-.workspace-tab-header[data-type="outgoing-link"] .workspace-tab-header-inner-icon {
-  color: var(--sl-purple);
+.workspace-tab-header[data-type="outgoing-link"]
+	.workspace-tab-header-inner-icon {
+	color: var(--sl-purple);
 }
 .workspace-tab-header[data-type="calendar"] .workspace-tab-header-inner-icon {
-  color: var(--sl-blue);
+	color: var(--sl-blue);
 }
 
 /* Result counts and tree flairs: a quiet pill rather than bare digits. */
 .tree-item-flair,
 .search-result-count,
 .backlink-pane .tree-item-flair {
-  color: var(--sl-primary);
-  background: rgba(var(--sl-primary-rgb), var(--sl-wash));
-  border-radius: 1em;
-  padding: 0 0.5em;
-  font-variant-numeric: tabular-nums;
+	color: var(--sl-primary);
+	background: color-mix(
+		in srgb,
+		var(--sl-primary) calc(var(--sl-wash) * 100%),
+		transparent
+	);
+	border-radius: 1em;
+	padding: 0 0.5em;
+	font-variant-numeric: tabular-nums;
 }
 
 .search-result-file-title .tree-item-flair {
-  color: var(--sl-accent);
-  background: rgba(var(--sl-accent-rgb), var(--sl-wash));
+	color: var(--sl-accent);
+	background: color-mix(
+		in srgb,
+		var(--sl-accent) calc(var(--sl-wash) * 100%),
+		transparent
+	);
 }
 
 /* Unlinked mentions read cooler than linked ones. */
 .backlink-pane > .tree-item:nth-of-type(2) .tree-item-flair {
-  color: var(--sl-gray);
-  background: rgba(var(--sl-gray-rgb), var(--sl-wash));
+	color: var(--sl-gray);
+	background: rgba(var(--sl-gray-rgb), var(--sl-wash));
 }
 
 /* Status bar: quiet until touched. */
 .status-bar-item.mod-clickable:hover {
-  color: var(--sl-primary);
+	color: var(--sl-primary);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1601,27 +3076,35 @@ body {
    ------------------------------------------------------------------------ */
 
 .clickable-icon {
-  color: var(--sl-muted);
+	color: var(--sl-muted);
 }
 
 .clickable-icon:hover {
-  color: var(--sl-primary);
-  background-color: rgba(var(--sl-primary-rgb), 0.1);
+	color: var(--sl-primary);
+	background-color: color-mix(in srgb, var(--sl-primary) 10%, transparent);
 }
 
 .clickable-icon.is-active,
 .clickable-icon.has-active-menu {
-  color: var(--sl-accent);
-  background-color: rgba(var(--sl-accent-rgb), var(--sl-wash));
+	color: var(--sl-accent);
+	background-color: color-mix(
+		in srgb,
+		var(--sl-accent) calc(var(--sl-wash) * 100%),
+		transparent
+	);
 }
 
 .clickable-icon.is-active:hover {
-  color: var(--sl-accent);
-  background-color: rgba(var(--sl-accent-rgb), var(--sl-wash-strong));
+	color: var(--sl-accent);
+	background-color: color-mix(
+		in srgb,
+		var(--sl-accent) calc(var(--sl-wash-strong) * 100%),
+		transparent
+	);
 }
 
 .clickable-icon.mod-warning {
-  color: var(--sl-red);
+	color: var(--sl-red);
 }
 
 /* Rail and pane-action icons take a hue by position. There is no attribute on
@@ -1629,207 +3112,219 @@ body {
    localized — so position is the only stable key available. 8n+k wraps, so a
    rail of any length stays evenly spread across the rotation. */
 
-.side-dock-ribbon-action:nth-of-type(8n+1),
-.nav-buttons-container .clickable-icon:nth-of-type(8n+1),
-.view-actions .clickable-icon:nth-of-type(8n+1) {
-  --slate-icon: var(--slate-rot-1);
+.side-dock-ribbon-action:nth-of-type(8n + 1),
+.nav-buttons-container .clickable-icon:nth-of-type(8n + 1),
+.view-actions .clickable-icon:nth-of-type(8n + 1) {
+	--slate-icon: var(--slate-rot-1);
 }
 
-.side-dock-ribbon-action:nth-of-type(8n+2),
-.nav-buttons-container .clickable-icon:nth-of-type(8n+2),
-.view-actions .clickable-icon:nth-of-type(8n+2) {
-  --slate-icon: var(--slate-rot-2);
+.side-dock-ribbon-action:nth-of-type(8n + 2),
+.nav-buttons-container .clickable-icon:nth-of-type(8n + 2),
+.view-actions .clickable-icon:nth-of-type(8n + 2) {
+	--slate-icon: var(--slate-rot-2);
 }
 
-.side-dock-ribbon-action:nth-of-type(8n+3),
-.nav-buttons-container .clickable-icon:nth-of-type(8n+3),
-.view-actions .clickable-icon:nth-of-type(8n+3) {
-  --slate-icon: var(--slate-rot-3);
+.side-dock-ribbon-action:nth-of-type(8n + 3),
+.nav-buttons-container .clickable-icon:nth-of-type(8n + 3),
+.view-actions .clickable-icon:nth-of-type(8n + 3) {
+	--slate-icon: var(--slate-rot-3);
 }
 
-.side-dock-ribbon-action:nth-of-type(8n+4),
-.nav-buttons-container .clickable-icon:nth-of-type(8n+4),
-.view-actions .clickable-icon:nth-of-type(8n+4) {
-  --slate-icon: var(--slate-rot-4);
+.side-dock-ribbon-action:nth-of-type(8n + 4),
+.nav-buttons-container .clickable-icon:nth-of-type(8n + 4),
+.view-actions .clickable-icon:nth-of-type(8n + 4) {
+	--slate-icon: var(--slate-rot-4);
 }
 
-.side-dock-ribbon-action:nth-of-type(8n+5),
-.nav-buttons-container .clickable-icon:nth-of-type(8n+5),
-.view-actions .clickable-icon:nth-of-type(8n+5) {
-  --slate-icon: var(--slate-rot-5);
+.side-dock-ribbon-action:nth-of-type(8n + 5),
+.nav-buttons-container .clickable-icon:nth-of-type(8n + 5),
+.view-actions .clickable-icon:nth-of-type(8n + 5) {
+	--slate-icon: var(--slate-rot-5);
 }
 
-.side-dock-ribbon-action:nth-of-type(8n+6),
-.nav-buttons-container .clickable-icon:nth-of-type(8n+6),
-.view-actions .clickable-icon:nth-of-type(8n+6) {
-  --slate-icon: var(--slate-rot-6);
+.side-dock-ribbon-action:nth-of-type(8n + 6),
+.nav-buttons-container .clickable-icon:nth-of-type(8n + 6),
+.view-actions .clickable-icon:nth-of-type(8n + 6) {
+	--slate-icon: var(--slate-rot-6);
 }
 
-.side-dock-ribbon-action:nth-of-type(8n+7),
-.nav-buttons-container .clickable-icon:nth-of-type(8n+7),
-.view-actions .clickable-icon:nth-of-type(8n+7) {
-  --slate-icon: var(--slate-rot-7);
+.side-dock-ribbon-action:nth-of-type(8n + 7),
+.nav-buttons-container .clickable-icon:nth-of-type(8n + 7),
+.view-actions .clickable-icon:nth-of-type(8n + 7) {
+	--slate-icon: var(--slate-rot-7);
 }
 
-.side-dock-ribbon-action:nth-of-type(8n+8),
-.nav-buttons-container .clickable-icon:nth-of-type(8n+8),
-.view-actions .clickable-icon:nth-of-type(8n+8) {
-  --slate-icon: var(--slate-rot-8);
+.side-dock-ribbon-action:nth-of-type(8n + 8),
+.nav-buttons-container .clickable-icon:nth-of-type(8n + 8),
+.view-actions .clickable-icon:nth-of-type(8n + 8) {
+	--slate-icon: var(--slate-rot-8);
 }
 
 .side-dock-ribbon-action,
 .nav-buttons-container .clickable-icon,
 .view-actions .clickable-icon {
-  color: rgba(var(--slate-icon, var(--sl-muted-rgb)), 0.9);
+	color: color-mix(
+		in srgb,
+		var(--slate-icon, var(--sl-muted)) 90%,
+		transparent
+	);
 }
 
 .side-dock-ribbon-action:hover,
 .nav-buttons-container .clickable-icon:hover,
 .view-actions .clickable-icon:hover {
-  color: rgb(var(--slate-icon, var(--sl-primary-rgb)));
-  background-color: rgba(var(--slate-icon, var(--sl-primary-rgb)), var(--sl-wash));
+	color: var(--slate-icon, var(--sl-primary));
+	background-color: color-mix(
+		in srgb,
+		var(--slate-icon, var(--sl-primary)) calc(var(--sl-wash) * 100%),
+		transparent
+	);
 }
 
 .side-dock-ribbon-action.is-active,
 .nav-buttons-container .clickable-icon.is-active,
 .view-actions .clickable-icon.is-active {
-  color: rgb(var(--slate-icon, var(--sl-accent-rgb)));
-  background-color: rgba(var(--slate-icon, var(--sl-accent-rgb)), var(--sl-wash-strong));
+	color: var(--slate-icon, var(--sl-accent));
+	background-color: color-mix(
+		in srgb,
+		var(--slate-icon, var(--sl-accent)) calc(var(--sl-wash-strong) * 100%),
+		transparent
+	);
 }
 
 /* Closing a tab is destructive enough to warrant the red. */
 .workspace-tab-header-inner-close-button:hover {
-  color: var(--sl-red);
-  background-color: rgba(var(--sl-red-rgb), var(--sl-wash));
+	color: var(--sl-red);
+	background-color: rgba(var(--sl-red-rgb), var(--sl-wash));
 }
 
 /* Dragging a pane: the drop target takes the primary. */
 .workspace-drop-overlay::before {
-  background-color: rgba(var(--sl-primary-rgb), 0.14);
-  border: 2px solid rgba(var(--sl-primary-rgb), 0.5);
-  border-radius: var(--radius-m);
+	background-color: color-mix(in srgb, var(--sl-primary) 14%, transparent);
+	border: 2px solid color-mix(in srgb, var(--sl-primary) 50%, transparent);
+	border-radius: var(--radius-m);
 }
 
 /* Context menus. */
 .menu-item-icon {
-  color: var(--sl-muted);
+	color: var(--sl-muted);
 }
 
 .menu-item:hover .menu-item-icon,
 .menu-item:hover .menu-item-title {
-  color: var(--sl-primary);
+	color: var(--sl-primary);
 }
 
 .menu-item.is-warning .menu-item-icon,
 .menu-item.is-warning .menu-item-title {
-  color: var(--sl-red);
+	color: var(--sl-red);
 }
 
 .menu-item.is-warning:hover {
-  background-color: rgba(var(--sl-red-rgb), var(--sl-wash));
+	background-color: rgba(var(--sl-red-rgb), var(--sl-wash));
 }
 
 .menu-item.is-label {
-  color: var(--text-faint);
+	color: var(--text-faint);
 }
 
 /* Tooltips and toasts sit on the overlay surface, not a bespoke gray. */
 .tooltip {
-  background-color: var(--sl-overlay);
-  color: var(--sl-text);
-  border: 1px solid var(--sl-border);
-  border-radius: var(--radius-s);
+	background-color: var(--sl-overlay);
+	color: var(--sl-text);
+	border: 1px solid var(--sl-border);
+	border-radius: var(--radius-s);
 }
 
 .tooltip.mod-error {
-  background-color: rgba(var(--sl-red-rgb), var(--sl-wash-strong));
-  color: var(--sl-red);
-  border-color: rgba(var(--sl-red-rgb), 0.4);
+	background-color: rgba(var(--sl-red-rgb), var(--sl-wash-strong));
+	color: var(--sl-red);
+	border-color: rgba(var(--sl-red-rgb), 0.4);
 }
 
 .notice {
-  background-color: var(--sl-overlay);
-  color: var(--sl-text);
-  border-left: 3px solid var(--sl-accent);
+	background-color: var(--sl-overlay);
+	color: var(--sl-text);
+	border-left: 3px solid var(--sl-accent);
 }
 
 /* Command palette hotkey hints. */
 .prompt-instruction-command {
-  color: var(--sl-primary);
-  font-weight: 600;
+	color: var(--sl-primary);
+	font-weight: 600;
 }
 
 .prompt-instruction {
-  color: var(--text-faint);
+	color: var(--text-faint);
 }
 
 /* Settings and the plugin/theme browser. */
 .vertical-tab-header-group-title {
-  color: var(--sl-accent);
-  font-weight: 650;
+	color: var(--sl-accent);
+	font-weight: 650;
 }
 
 .vertical-tab-nav-item:hover {
-  color: var(--sl-primary);
-  background-color: rgba(var(--sl-primary-rgb), 0.09);
+	color: var(--sl-primary);
+	background-color: color-mix(in srgb, var(--sl-primary) 9%, transparent);
 }
 
 .vertical-tab-nav-item.is-active {
-  color: var(--sl-primary);
-  background-color: rgba(var(--sl-primary-rgb), 0.14);
-  font-weight: 600;
+	color: var(--sl-primary);
+	background-color: color-mix(in srgb, var(--sl-primary) 14%, transparent);
+	font-weight: 600;
 }
 
 .vertical-tab-header-title {
-  color: var(--sl-text);
+	color: var(--sl-text);
 }
 
 .setting-item-name {
-  color: var(--sl-text);
-  font-weight: 600;
+	color: var(--sl-text);
+	font-weight: 600;
 }
 
 .community-item-name {
-  color: var(--sl-primary);
-  font-weight: 650;
+	color: var(--sl-primary);
+	font-weight: 650;
 }
 
 .community-item-author {
-  color: var(--text-muted);
+	color: var(--text-muted);
 }
 
 .community-item-downloads-text {
-  color: var(--sl-accent);
-  font-variant-numeric: tabular-nums;
+	color: var(--sl-accent);
+	font-variant-numeric: tabular-nums;
 }
 
 .community-item-badge.mod-update {
-  background-color: rgba(var(--sl-orange-rgb), var(--sl-wash-strong));
-  color: var(--sl-orange);
+	background-color: rgba(var(--sl-orange-rgb), var(--sl-wash-strong));
+	color: var(--sl-orange);
 }
 
 /* Search input and its toggles. */
 .search-input-container input:focus {
-  border-color: var(--sl-primary);
-  box-shadow: 0 0 0 2px rgba(var(--sl-primary-rgb), 0.18);
+	border-color: var(--sl-primary);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--sl-primary) 18%, transparent);
 }
 
 .search-input-clear-button:hover {
-  color: var(--sl-red);
+	color: var(--sl-red);
 }
 
 /* Empty panes: present, not apologetic. */
 .empty-state-title {
-  color: var(--sl-muted);
+	color: var(--sl-muted);
 }
 
 .empty-state-action {
-  color: var(--sl-primary);
+	color: var(--sl-primary);
 }
 
 .empty-state-action:hover {
-  color: var(--sl-cyan);
-  text-decoration: underline;
+	color: var(--sl-cyan);
+	text-decoration: underline;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1839,17 +3334,24 @@ body {
    diagram's id — that is an id selector, so nothing here lands without
    !important. This is the one place in the theme that needs it.
 
-   The lint's other suggestion, CSS variables, only reaches one property:
-   Obsidian's mermaid config passes exactly one themeVariable through,
-   `fontFamily: var(--font-mermaid)`. That one is set in section 2 and needs no
-   override. Colours have no equivalent hook, so the fills and strokes below
-   stay as they are.
-
    Verified against the section-N pattern four other themes in the wild rely
    on. The flowchart, sequence and class selectors are mermaid's documented
    public class names; they are stable across mermaid 10 and 11 but are the
    part most likely to need revisiting if mermaid restructures its output.
    ------------------------------------------------------------------------ */
+
+/* Mermaid inherits the body font into the diagram, so a serif reading face
+   ends up in flowchart labels. Diagrams are interface, not prose. Mermaid sets
+   font-family from its own theme variables, hence the override. */
+.mermaid,
+.mermaid text,
+.mermaid span,
+.mermaid p,
+.mermaid div,
+.block-language-mermaid text,
+svg[id^="mermaid-"] text {
+	font-family: var(--font-interface-theme) !important;
+}
 
 /* Flowchart and graph nodes. */
 .mermaid .node rect,
@@ -1857,9 +3359,13 @@ body {
 .mermaid .node ellipse,
 .mermaid .node polygon,
 .mermaid .node path {
-  fill: rgba(var(--sl-primary-rgb), var(--sl-wash)) !important;
-  stroke: var(--sl-primary) !important;
-  stroke-width: 1.5px !important;
+	fill: color-mix(
+		in srgb,
+		var(--sl-primary) calc(var(--sl-wash) * 100%),
+		transparent
+	) !important;
+	stroke: var(--sl-primary) !important;
+	stroke-width: 1.5px !important;
 }
 
 /* Labels. Node fills land but text has resisted three rounds of increasingly
@@ -1886,77 +3392,85 @@ svg[id^="mermaid-"] tspan,
 svg[id^="mermaid-"] span,
 svg[id^="mermaid-"] p,
 svg[id^="mermaid-"] div {
-  color: var(--sl-text) !important;
-  fill: var(--sl-text) !important;
+	color: var(--sl-text) !important;
+	fill: var(--sl-text) !important;
 }
 
 /* Exception: edge labels are apparatus, not content. */
 .mermaid .edgeLabel rect,
 .mermaid .edgeLabel foreignObject > div {
-  background-color: var(--sl-surface) !important;
-  fill: var(--sl-surface) !important;
+	background-color: var(--sl-surface) !important;
+	fill: var(--sl-surface) !important;
 }
 
 .mermaid .edgeLabel,
 .mermaid .edgeLabel *,
 .block-language-mermaid .edgeLabel *,
 svg[id^="mermaid-"] .edgeLabel * {
-  color: var(--sl-muted) !important;
-  fill: var(--sl-muted) !important;
+	color: var(--sl-muted) !important;
+	fill: var(--sl-muted) !important;
 }
 
 /* Subgraphs and clusters. */
 .mermaid .cluster rect {
-  fill: rgba(var(--sl-gray-rgb), 0.06) !important;
-  stroke: rgba(var(--sl-gray-rgb), 0.5) !important;
+	fill: rgba(var(--sl-gray-rgb), 0.06) !important;
+	stroke: rgba(var(--sl-gray-rgb), 0.5) !important;
 }
 
 .mermaid .cluster text,
 .mermaid .cluster .nodeLabel {
-  fill: var(--sl-muted) !important;
+	fill: var(--sl-muted) !important;
 }
 
 /* Sequence diagrams. */
 .mermaid .actor {
-  fill: rgba(var(--sl-accent-rgb), var(--sl-wash)) !important;
-  stroke: var(--sl-accent) !important;
+	fill: color-mix(
+		in srgb,
+		var(--sl-accent) calc(var(--sl-wash) * 100%),
+		transparent
+	) !important;
+	stroke: var(--sl-accent) !important;
 }
 
 .mermaid text.actor,
 .mermaid text.actor > tspan {
-  fill: var(--sl-text) !important;
-  stroke: none !important;
+	fill: var(--sl-text) !important;
+	stroke: none !important;
 }
 
 .mermaid .messageText {
-  fill: var(--sl-text) !important;
-  stroke: none !important;
+	fill: var(--sl-text) !important;
+	stroke: none !important;
 }
 
 .mermaid .labelBox {
-  fill: rgba(var(--sl-primary-rgb), var(--sl-wash)) !important;
-  stroke: var(--sl-primary) !important;
+	fill: color-mix(
+		in srgb,
+		var(--sl-primary) calc(var(--sl-wash) * 100%),
+		transparent
+	) !important;
+	stroke: var(--sl-primary) !important;
 }
 
 .mermaid .labelText,
 .mermaid .labelText > tspan,
 .mermaid .loopText,
 .mermaid .loopText > tspan {
-  fill: var(--sl-text) !important;
+	fill: var(--sl-text) !important;
 }
 
 .mermaid .loopLine {
-  stroke: var(--sl-purple) !important;
+	stroke: var(--sl-purple) !important;
 }
 
 .mermaid .note {
-  fill: rgba(var(--sl-yellow-rgb), var(--sl-wash-strong)) !important;
-  stroke: rgba(var(--sl-yellow-rgb), 0.6) !important;
+	fill: rgba(var(--sl-yellow-rgb), var(--sl-wash-strong)) !important;
+	stroke: rgba(var(--sl-yellow-rgb), 0.6) !important;
 }
 
 .mermaid .noteText,
 .mermaid .noteText > tspan {
-  fill: var(--sl-text) !important;
+	fill: var(--sl-text) !important;
 }
 
 /* Class, state and ER diagrams. Mermaid 11 renders these through the same
@@ -1969,20 +3483,20 @@ svg[id^="mermaid-"] .edgeLabel * {
 .mermaid .classGroup rect,
 .mermaid .statediagram-state rect,
 .mermaid .stateGroup rect {
-  fill: rgba(var(--sl-purple-rgb), var(--sl-wash)) !important;
-  stroke: var(--sl-purple) !important;
+	fill: rgba(var(--sl-purple-rgb), var(--sl-wash)) !important;
+	stroke: var(--sl-purple) !important;
 }
 
 .mermaid svg[aria-roledescription="classDiagram"] line,
 .mermaid .classGroup line,
 .mermaid .statediagram-state .divider {
-  stroke: rgba(var(--sl-purple-rgb), 0.5) !important;
+	stroke: rgba(var(--sl-purple-rgb), 0.5) !important;
 }
 
 .mermaid svg[aria-roledescription="er"] .node rect,
 .mermaid .entityBox {
-  fill: rgba(var(--sl-teal-rgb), var(--sl-wash)) !important;
-  stroke: var(--sl-teal) !important;
+	fill: rgba(var(--sl-teal-rgb), var(--sl-wash)) !important;
+	stroke: var(--sl-teal) !important;
 }
 
 /* Mindmaps and gantt sections walk the rotation, one hue per section. */
@@ -1990,56 +3504,56 @@ svg[id^="mermaid-"] .edgeLabel * {
 .mermaid .section-0 path,
 .mermaid .section-0 line,
 .mermaid .section-edge-0 {
-  fill: rgb(var(--slate-rot-1)) !important;
-  stroke: rgb(var(--slate-rot-1)) !important;
+	fill: var(--slate-rot-1) !important;
+	stroke: var(--slate-rot-1) !important;
 }
 
 .mermaid .section-1 rect,
 .mermaid .section-1 path,
 .mermaid .section-1 line,
 .mermaid .section-edge-1 {
-  fill: rgb(var(--slate-rot-2)) !important;
-  stroke: rgb(var(--slate-rot-2)) !important;
+	fill: var(--slate-rot-2) !important;
+	stroke: var(--slate-rot-2) !important;
 }
 
 .mermaid .section-2 rect,
 .mermaid .section-2 path,
 .mermaid .section-2 line,
 .mermaid .section-edge-2 {
-  fill: rgb(var(--slate-rot-3)) !important;
-  stroke: rgb(var(--slate-rot-3)) !important;
+	fill: var(--slate-rot-3) !important;
+	stroke: var(--slate-rot-3) !important;
 }
 
 .mermaid .section-3 rect,
 .mermaid .section-3 path,
 .mermaid .section-3 line,
 .mermaid .section-edge-3 {
-  fill: rgb(var(--slate-rot-4)) !important;
-  stroke: rgb(var(--slate-rot-4)) !important;
+	fill: var(--slate-rot-4) !important;
+	stroke: var(--slate-rot-4) !important;
 }
 
 .mermaid .section-4 rect,
 .mermaid .section-4 path,
 .mermaid .section-4 line,
 .mermaid .section-edge-4 {
-  fill: rgb(var(--slate-rot-5)) !important;
-  stroke: rgb(var(--slate-rot-5)) !important;
+	fill: var(--slate-rot-5) !important;
+	stroke: var(--slate-rot-5) !important;
 }
 
 .mermaid .section-5 rect,
 .mermaid .section-5 path,
 .mermaid .section-5 line,
 .mermaid .section-edge-5 {
-  fill: rgb(var(--slate-rot-6)) !important;
-  stroke: rgb(var(--slate-rot-6)) !important;
+	fill: var(--slate-rot-6) !important;
+	stroke: var(--slate-rot-6) !important;
 }
 
 .mermaid .section-6 rect,
 .mermaid .section-6 path,
 .mermaid .section-6 line,
 .mermaid .section-edge-6 {
-  fill: rgb(var(--slate-rot-7)) !important;
-  stroke: rgb(var(--slate-rot-7)) !important;
+	fill: var(--slate-rot-7) !important;
+	stroke: var(--slate-rot-7) !important;
 }
 
 /* Exception: mindmap and gantt section labels sit on a saturated fill from the
@@ -2055,17 +3569,17 @@ svg[id^="mermaid-"] .edgeLabel * {
 .mermaid .sectionTitle *,
 .block-language-mermaid .mindmap-node *,
 svg[id^="mermaid-"] .mindmap-node * {
-  color: var(--text-on-accent) !important;
-  fill: var(--text-on-accent) !important;
+	color: var(--text-on-accent) !important;
+	fill: var(--text-on-accent) !important;
 }
 
 /* Gantt grid and today marker. */
 .mermaid .grid .tick line {
-  stroke: rgba(var(--sl-gray-rgb), 0.3) !important;
+	stroke: rgba(var(--sl-gray-rgb), 0.3) !important;
 }
 
 .mermaid .today {
-  stroke: var(--sl-red) !important;
+	stroke: var(--sl-red) !important;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2077,44 +3591,168 @@ svg[id^="mermaid-"] .mindmap-node * {
    band, and the bullet halos print as smudges. Hue on the ink itself is kept,
    since that is what carries the structure. */
 @media print {
-  body {
-    --background-primary: #ffffff;
-    --text-normal: #1f2933;
-    --slate-tint-1: 0;
-    --slate-tint-2: 0;
-    --slate-tint-3: 0;
-    --slate-tint-4: 0;
-    --slate-tint-5: 0;
-    --slate-tint-6: 0;
-    --slate-halo: 0;
-    --slate-quote-wash: 0;
-  }
+	body {
+		--background-primary: #ffffff;
+		--text-normal: #1f2933;
+		--slate-tint-1: 0;
+		--slate-tint-2: 0;
+		--slate-tint-3: 0;
+		--slate-tint-4: 0;
+		--slate-tint-5: 0;
+		--slate-tint-6: 0;
+		--slate-halo: 0;
+		--slate-quote-wash: 0;
+	}
 
-  .markdown-rendered :is(h1, h2, h3, h4, h5, h6) {
-    padding: 0;
-    margin-inline-start: 0;
-  }
+	.markdown-rendered :is(h1, h2, h3, h4, h5, h6) {
+		padding: 0;
+		margin-inline-start: 0;
+	}
 
-  .markdown-rendered pre,
-  .markdown-rendered code {
-    background: none;
-  }
+	.markdown-rendered pre,
+	.markdown-rendered code {
+		background: none;
+	}
 
-  hr {
-    background: none;
-    border-top: 1px solid #d4dae1;
-  }
+	hr {
+		background: none;
+		border-top: 1px solid #d4dae1;
+	}
 }
 
 /* The theme adds transitions to bullets, icons and washes. Honor the system
    setting rather than animating regardless. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms;
-    animation-duration: 0.01ms;
-    animation-iteration-count: 1;
-    scroll-behavior: auto;
-  }
+	*,
+	*::before,
+	*::after {
+		transition-duration: 0.01ms;
+		animation-duration: 0.01ms;
+		animation-iteration-count: 1;
+		scroll-behavior: auto;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   22. Style Settings additions (Diagrammo Slate Plus)
+   ------------------------------------------------------------------------ */
+
+/* Canvas zoom controls fade to a whisper until hovered, keeping the board
+   clean without losing the affordance — a barely-visible control can still
+   catch the pointer, so no pointer-events tricks are needed. */
+body.ds-canvas-controls-hover .canvas-controls {
+	opacity: 0.15;
+	transition: opacity 0.18s ease;
+}
+
+body.ds-canvas-controls-hover .canvas-controls:hover {
+	opacity: 1;
+}
+
+/* Unfocused cards center their text, so a board of small labels reads as a
+   diagram rather than a column of left-aligned notes. Editing keeps the
+   caret honest on the left. */
+body.ds-canvas-center-text
+	.canvas-node:not(.is-focused):not(.is-editing)
+	.canvas-node-content.markdown-rendered {
+	text-align: center;
+}
+
+body.ds-canvas-center-text
+	.canvas-node:not(.is-focused):not(.is-editing)
+	.canvas-node-content.markdown-embed
+	> .markdown-embed-content
+	> .markdown-preview-view
+	> .markdown-preview-sizer {
+	text-align: center;
+}
+
+/* Kill-switch for interface animation: zero every duration tier core uses. */
+body.ds-anim-off {
+	--anim-duration-none: 0ms;
+	--anim-duration-superfast: 0ms;
+	--anim-duration-fast: 0ms;
+	--anim-duration-moderate: 0ms;
+	--anim-duration-slow: 0ms;
+}
+
+/* Quote card outline variants (ds-quote-style). Shadow is the default; the
+   plain value needs no rules of its own. */
+body.ds-quote-shadow .markdown-rendered blockquote {
+	box-shadow: var(--ds-card-shadow);
+}
+
+/* The border variant draws its hairline from the depth hue itself — the same
+   color family that tints the wash background — so the outline reads as part
+   of the card rather than a neutral frame. */
+body.ds-quote-border .markdown-rendered blockquote {
+	border: 1px solid
+		color-mix(in srgb, var(--blockquote-border-color) 35%, transparent);
+	transition: border-color 0.15s ease;
+}
+
+body.ds-quote-border .markdown-rendered blockquote:hover {
+	border-color: color-mix(
+		in srgb,
+		var(--blockquote-border-color) 65%,
+		transparent
+	);
+}
+
+/* Big opening quote mark in place of the left bar (reading view). The mark
+   takes the depth hue along with the bar it replaces, so nested quotes keep
+   the ladder. */
+body.ds-quote-mark .markdown-rendered blockquote {
+	padding-inline-start: calc(var(--blockquote-border-thickness) + 1.7em);
+}
+
+body.ds-quote-mark .markdown-rendered blockquote::before {
+	content: "\201C";
+	position: absolute;
+	left: var(--size-4-2);
+	top: calc(var(--ds-quote-pad-y, 0.45) * 0.35em);
+	font-family: var(--font-monospace-theme);
+	font-size: 2.6em;
+	font-style: normal;
+	line-height: 0.8;
+	color: var(--blockquote-border-color);
+	opacity: 0.75;
+}
+
+body.ds-quote-mark .markdown-rendered blockquote::after {
+	content: none;
+}
+
+/* Italic quotes. Reading view reads --blockquote-font-style; live preview
+   reads --blockquote-style — set both. */
+body.ds-quote-italic {
+	--blockquote-font-style: italic;
+	--blockquote-style: italic;
+}
+
+/* Live preview: quote lines wrap into a rounded box (Maple). Side and end
+   borders use the quote wash, so the box edge carries the depth hue too. */
+.markdown-source-view.mod-cm6 .HyperMD-quote {
+	border: solid var(--blockquote-background-color);
+	border-width: 0 var(--size-4-2);
+}
+
+.markdown-source-view.mod-cm6
+	:is(
+		.HyperMD-quote:first-child,
+		.cm-sizer > div > div > *:not(.HyperMD-quote) + .HyperMD-quote
+	) {
+	border-top-width: var(--size-4-2);
+	border-start-start-radius: var(--radius-s);
+	border-start-end-radius: var(--radius-s);
+}
+
+.markdown-source-view.mod-cm6
+	:is(
+		.HyperMD-quote:last-child,
+		.cm-sizer > div > div > .HyperMD-quote:has(+ *:not(.HyperMD-quote))
+	) {
+	border-bottom-width: var(--size-4-2);
+	border-end-start-radius: var(--radius-s);
+	border-end-end-radius: var(--radius-s);
 }
