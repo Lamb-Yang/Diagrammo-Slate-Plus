@@ -2663,6 +2663,13 @@ input[type="range"]::-webkit-slider-thumb {
    in. It grows, and carries a halo of its own hue so the color reads from a
    distance without the dot itself becoming heavy. --slate-marker holds the
    level's triplet because box-shadow needs the components, not a color. */
+
+/* 缩小 bullet 符号，让符号和文字之间视觉上更疏朗 */
+.markdown-rendered .list-bullet,
+.markdown-source-view.mod-cm6 .list-bullet {
+	--list-bullet-size: 0.3em;
+}
+
 .markdown-rendered .list-bullet::after,
 .markdown-source-view.mod-cm6 .list-bullet::after {
 	box-shadow: 0 0 0 3px
