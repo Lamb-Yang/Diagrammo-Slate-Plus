@@ -450,6 +450,22 @@ settings:
         label.zh: 财报线条
         value: ds-table-finance
   -
+    id: ds-col-min-width
+    title: Column Min Width
+    title.zh: 列最小宽度
+    description: Minimum width of a table column, in ch (roughly one character). Applies to reading view and live preview.
+    description.zh: 表格列的最小宽度，单位 ch（约一个字符宽）。阅读视图与实时预览同时生效。
+    type: variable-number
+    default: 6
+  -
+    id: ds-col-max-width
+    title: Column Max Width
+    title.zh: 列最大宽度
+    description: Maximum width of a table column, in ch. 0 means unlimited (Obsidian default). Reading view only.
+    description.zh: 表格列的最大宽度，单位 ch。填 0 表示不限制（Obsidian 默认行为）。仅阅读视图生效。
+    type: variable-number
+    default: 0
+  -
     id: ds-img-heading
     title: Images
     title.zh: 图片
@@ -1438,11 +1454,7 @@ body.ds-code-terminal .markdown-source-view .code-block-flair {
 /* Minimal — hairlines and the left rule all go; only a wash between the
    surface and the page ground marks the block. The quietest option. */
 body.ds-code-minimal {
-	--pre-code-background: color-mix(
-		in srgb,
-		var(--sl-surface) 62%,
-		var(--sl-bg)
-	);
+	--pre-code-background: color-mix(in srgb, var(--sl-surface) 62%, var(--sl-bg));
 }
 
 body.ds-code-minimal .markdown-rendered pre {
@@ -1487,8 +1499,7 @@ body.ds-code-blueprint .markdown-source-view.mod-cm6 .HyperMD-codeblock-begin {
 }
 
 body.ds-code-blueprint .markdown-source-view.mod-cm6 .HyperMD-codeblock-end {
-	border-bottom: 1px solid
-		color-mix(in srgb, var(--sl-primary) 32%, transparent);
+	border-bottom: 1px solid color-mix(in srgb, var(--sl-primary) 32%, transparent);
 }
 
 body.ds-code-blueprint .markdown-rendered .code-block-flair,
@@ -2438,6 +2449,17 @@ body {
 	--table-column-alt-background: transparent;
 	--table-selection: color-mix(in srgb, var(--sl-primary) 18%, transparent);
 
+	/* 列宽限制：Style Settings 中按 ch 填写数值。最小宽度双视图生效；
+	   最大宽度核心只在阅读视图消费。核心默认不限宽，这里把填 0
+	   换算为 999999ch 的等效无限宽，非零值原样生效。 */
+	--table-column-min-width: calc(var(--ds-col-min-width, 6) * 1ch);
+	--table-column-max-width: calc(
+		(1 - clamp(0, var(--ds-col-max-width, 0), 1)) *
+		999999ch +
+		var(--ds-col-max-width, 0) *
+		1ch
+	);
+
 	--metadata-background: rgba(var(--sl-surface-rgb), 0.6);
 	--metadata-divider-color: var(--sl-border);
 	--metadata-label-text-color: var(--sl-muted);
@@ -2449,6 +2471,15 @@ body {
 .markdown-rendered table {
 	border-radius: var(--ds-table-radius, 8px);
 	overflow: hidden;
+}
+
+/* 修复：实时预览的表格控件容器类名含 markdown-rendered，上面的
+   overflow: hidden 会裁掉行/列拖拽手柄——手柄挂在单元格上并用负向
+   inset 定位在表格外侧。在控件内恢复可见并取消圆角（编辑态表格
+   回到 Obsidian 默认外观，避免底色从圆角四角溢出）。 */
+.cm-table-widget.markdown-rendered table {
+	overflow: visible;
+	border-radius: 0;
 }
 
 /* Zebra striping is opt-in. Core paints odd rows from
@@ -3170,11 +3201,7 @@ body {
 .side-dock-ribbon-action,
 .nav-buttons-container .clickable-icon,
 .view-actions .clickable-icon {
-	color: color-mix(
-		in srgb,
-		var(--slate-icon, var(--sl-muted)) 90%,
-		transparent
-	);
+	color: color-mix(in srgb, var(--slate-icon, var(--sl-muted)) 90%, transparent);
 }
 
 .side-dock-ribbon-action:hover,
