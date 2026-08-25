@@ -2460,6 +2460,10 @@ body {
 		1ch
 	);
 
+	/* 表格行高对齐正文：核心默认用 --line-height-tight（较紧），
+	   改成正文行高变量，跟随「正文行高」滑杆，阅读视图与实时预览同时生效。 */
+	--table-line-height: var(--line-height-normal);
+
 	--metadata-background: rgba(var(--sl-surface-rgb), 0.6);
 	--metadata-divider-color: var(--sl-border);
 	--metadata-label-text-color: var(--sl-muted);
