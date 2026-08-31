@@ -1132,11 +1132,11 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
    and the scrollbar does not drift, which a margin would break) while
    `background-clip: padding-box` stops the tint from painting under it.
 
-   The top corners are given an elliptical radius: the padding box a corner
-   inherits is the border box radius minus that side's border width, per axis.
-   Vertical is eaten by the border, horizontal is not, so ask for
-   `--radius-m` across and `--radius-m + spacing` down, and the tint's own
-   corners land back on --radius-m. A single radius here would square them off. */
+   The tint keeps the element's plain --radius-m on all four corners. An
+   earlier version compensated the thick transparent border with an elliptical
+   top radius (the border-box radius minus the border width, per axis), but
+   some Chromium builds square the padding-box top corners off under that math
+   when the spacing is small, so the plain radius wins. */
 body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 	.markdown-source-view.mod-cm6
 	.HyperMD-header {
@@ -1145,10 +1145,19 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 	padding-left: 0.6em;
 	border-top: var(--heading-spacing) solid transparent;
 	background-clip: padding-box;
-	border-top-left-radius: var(--radius-m)
-		calc(var(--radius-m) + var(--heading-spacing));
-	border-top-right-radius: var(--radius-m)
-		calc(var(--radius-m) + var(--heading-spacing));
+}
+
+/* Core zeroes the top padding of a heading that follows another heading
+   across a blank line (heading + empty line + heading). That padding is the
+   tint's inner top padding once this theme repurposes it, so the text would
+   glue to the band's top edge. Re-assert it with a selector that mirrors
+   core's (and outranks it); :has() matches core's own usage here. */
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+	.markdown-source-view.mod-cm6
+	.HyperMD-header
+	+ .cm-line:not(.HyperMD-header):has(> br:only-child)
+	+ .cm-line.HyperMD-header {
+	padding-top: 0.12em;
 }
 
 /* Two headings back to back stay tight, and a note that opens on a heading
@@ -1165,8 +1174,6 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 	.markdown-source-view.mod-cm6
 	.cm-line.HyperMD-header:first-child {
 	border-top-width: 0;
-	border-top-left-radius: var(--radius-m);
-	border-top-right-radius: var(--radius-m);
 }
 
 body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
