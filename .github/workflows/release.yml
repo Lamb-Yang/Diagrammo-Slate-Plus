@@ -1,0 +1,84 @@
+name: Release
+
+# 发布流程:改 manifest.json 里的 version → push 到 main → 本流水线自动
+# 更新 versions.json、打同名 tag、创建 GitHub Release,并附上 Obsidian
+# 要求的三个资产(theme.css / manifest.json / versions.json)。
+# 版本号没变时 tag 已存在,直接跳过,日常提交零成本。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 需要完整历史与已有 tag,用于判断该版本是否发布过
+          fetch-depth: 0
+
+      - name: Read version from manifest.json
+        id: version
+        run: |
+          VERSION="$(jq -r '.version // empty' manifest.json)"
+          if [ -z "$VERSION" ]; then
+            echo "::error::manifest.json 缺少 version 字段"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if already released
+        id: check
+        run: |
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "tag $VERSION 已存在,跳过发布"
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Update versions.json
+        if: steps.check.outputs.released == 'false'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          MIN_APP="$(jq -r '.minAppVersion' manifest.json)"
+          if [ -f versions.json ]; then
+            jq --arg v "$VERSION" --arg m "$MIN_APP" \
+              '. + {($v): $m}' versions.json > versions.json.tmp
+          else
+            jq -n --arg v "$VERSION" --arg m "$MIN_APP" '{($v): $m}' > versions.json.tmp
+          fi
+          mv versions.json.tmp versions.json
+          cat versions.json
+
+      - name: Commit versions.json
+        if: steps.check.outputs.released == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add versions.json
+          git diff --cached --quiet || git commit -m "versions.json for ${{ steps.version.outputs.version }}"
+          git push origin main
+
+      - name: Tag and create GitHub release
+        if: steps.check.outputs.released == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git tag -a "$VERSION" -m "Diagrammo Slate Plus $VERSION"
+          git push origin "$VERSION"
+          gh release create "$VERSION" \
+            --title "Diagrammo Slate Plus $VERSION" \
+            --generate-notes \
+            theme.css manifest.json versions.json
