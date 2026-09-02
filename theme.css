@@ -2493,6 +2493,13 @@ body {
 	border-radius: 0;
 }
 
+/* 表头行高对齐表格行高：核心给 th 硬编码 --line-height-tight，而焦点
+   单元格内的编辑行跟随 --table-line-height；两者不一致时表头文字在
+   获得焦点后视觉下沉。统一后阅读视图表头行高也与表体一致。 */
+.markdown-rendered th {
+	line-height: var(--table-line-height);
+}
+
 /* Zebra striping is opt-in. Core paints odd rows from
    --table-row-alt-background; it stays transparent while the toggle is off. */
 body.ds-table-zebra {
