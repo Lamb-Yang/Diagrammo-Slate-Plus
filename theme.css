@@ -25,6 +25,10 @@
       细线/虚线/点线/卡片留白样式与悬浮阴影。
    7. 悬浮阴影统一为一组令牌：大小与强度滑杆同时调节代码块、图片与
       引言卡片的所有可开启阴影。
+   8. 修复兼容问题：Style Settings 带单位的数字设置不再二次乘单位（行宽/
+      间距/字号滑杆曾因此失效）；正文字号改挂核心 --font-text-size；打印
+      样式修正选择器优先级并补齐暗色地面与 wash 清零；嵌入边框补写逻辑
+      属性名 --embed-border-start；--color-accent-rgb 随主色基准同步。
    ========================================================================= */
 
 /* @settings
@@ -608,6 +612,11 @@ settings:
 	--sl-accent: hsl(var(--ds-accent-hue, 174), 43%, 40%);
 	/* Obsidian 1.13 keeps an HSL triplet for legacy interactive surfaces. */
 	--color-accent-hsl: var(--ds-primary-hue, 211), 47%, 44%;
+	/* Core ships --color-accent-rgb as a static triplet and only rewrites it
+	   when an accent is picked in settings, so plugins reading the components
+	   would otherwise see the stock purple. Pinned to the default-hue primary;
+	   a static triplet cannot follow the hue slider. */
+	--color-accent-rgb: 59, 110, 165;
 
 	/* spectrum */
 	--sl-red-rgb: 192, 80, 77;
@@ -655,6 +664,7 @@ settings:
 	--sl-primary: hsl(var(--ds-primary-hue, 211), 59%, 60%);
 	--sl-accent: hsl(var(--ds-accent-hue, 174), 44%, 49%);
 	--color-accent-hsl: var(--ds-primary-hue, 211), 59%, 60%;
+	--color-accent-rgb: 93, 151, 213;
 
 	/* spectrum */
 	--sl-red-rgb: 224, 123, 110;
@@ -779,17 +789,17 @@ body {
 		monospace
 	);
 
-	--file-line-width: calc(var(--ds-line-width, 42) * 1rem);
+	--file-line-width: var(--ds-line-width, 42rem);
 
 	/* Gap above a heading. Reading view spends it as the heading's own
      margin-top, live preview as the previous line's padding-bottom — either
      way it lands outside the tinted box. The fallback is Obsidian's own
      formula, so reading view keeps the rhythm it already had and live preview
      comes up to meet it. */
-	--heading-spacing: calc(var(--ds-heading-space, 2.75) * 1rem);
+	--heading-spacing: var(--ds-heading-space, 2.75rem);
 	--line-height-normal: var(--ds-line-height, 1.7);
 	--line-height-tight: 1.35;
-	--p-spacing: calc(var(--ds-p-spacing, 1.1) * 1rem);
+	--p-spacing: var(--ds-p-spacing, 1.1rem);
 
 	--font-weight: 400;
 	--bold-weight: var(--ds-bold-weight, 650);
@@ -818,8 +828,12 @@ body {
 	--h1-variant: normal;
 	--h6-variant: normal;
 
-	--code-size: calc(var(--ds-code-size, 14) * 1px);
-	--font-adaptive-normal: calc(var(--ds-font-size, 16) * 1px);
+	/* Style Settings writes number settings with their format unit appended,
+	   so consume these directly; multiplying by 1px would produce an invalid
+	   px*px length the moment a slider is moved. Text size rides core's
+	   --font-text-size, the same variable the Appearance setting drives. */
+	--code-size: var(--ds-code-size, 14px);
+	--font-text-size: var(--ds-font-size, 16px);
 
 	--radius-s: 4px;
 	--radius-m: 7px;
@@ -1244,6 +1258,9 @@ body {
 		var(--sl-accent) 6%,
 		transparent
 	);
+	/* Core names the embed side border with the logical property; keep the
+	   physical alias for anything that still reads it. */
+	--embed-border-start: 2px solid rgba(var(--sl-purple-rgb), 0.5);
 	--embed-border-left: 2px solid rgba(var(--sl-purple-rgb), 0.5);
 	--embed-background: rgba(var(--sl-purple-rgb), 0.04);
 }
@@ -3641,9 +3658,15 @@ svg[id^="mermaid-"] .mindmap-node * {
 /* Print and PDF export stay on the light ground regardless of app theme, and
    drop every wash: a 12% tint that reads as color on screen prints as a gray
    band, and the bullet halos print as smudges. Hue on the ink itself is kept,
-   since that is what carries the structure. */
+   since that is what carries the structure.
+
+   The variable overrides re-state the theme class because the wash tokens
+   live on .theme-light / .theme-dark, which out-ranks a bare body; the
+   heading and hr resets mirror the full scoped selectors they cancel for the
+   same reason. */
 @media print {
-	body {
+	body.theme-light,
+	body.theme-dark {
 		--background-primary: #ffffff;
 		--text-normal: #1f2933;
 		--slate-tint-1: 0;
@@ -3654,11 +3677,23 @@ svg[id^="mermaid-"] .mindmap-node * {
 		--slate-tint-6: 0;
 		--slate-halo: 0;
 		--slate-quote-wash: 0;
+		/* Tag pills, flair counts and the opt-in shadows ride these; any
+		   surviving wash prints as a gray band. */
+		--sl-wash: 0;
+		--sl-wash-strong: 0;
+		--sl-shadow-strength: 0;
 	}
 
-	.markdown-rendered :is(h1, h2, h3, h4, h5, h6) {
-		padding: 0;
-		margin-inline-start: 0;
+	/* A dark app theme still prints on white paper, so swap the ground tokens
+	   the ink and markers derive from — checkboxes, code and faint text stay
+	   legible. The derived --sl-* colors recompute from the triplets. */
+	body.theme-dark {
+		--sl-bg-rgb: 255, 255, 255;
+		--sl-surface-rgb: 243, 245, 248;
+		--sl-overlay-rgb: 234, 238, 243;
+		--sl-border-rgb: 212, 218, 225;
+		--sl-text-rgb: 31, 41, 51;
+		--sl-muted-rgb: 91, 102, 114;
 	}
 
 	.markdown-rendered pre,
@@ -3666,9 +3701,19 @@ svg[id^="mermaid-"] .mindmap-node * {
 		background: none;
 	}
 
-	hr {
+	body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
+		.markdown-rendered
+		:is(h1, h2, h3, h4, h5, h6) {
+		padding: 0;
+		margin-inline-start: 0;
+	}
+
+	body:not(.slate-plain-rule) .markdown-rendered hr {
 		background: none;
+		border: none;
 		border-top: 1px solid #d4dae1;
+		height: auto;
+		opacity: 1;
 	}
 }
 
@@ -3783,13 +3828,14 @@ body.ds-quote-italic {
 }
 
 /* Live preview: quote lines wrap into a rounded box (Maple). Side and end
-   borders use the quote wash, so the box edge carries the depth hue too. */
-.markdown-source-view.mod-cm6 .HyperMD-quote {
+   borders use the quote wash, so the box edge carries the depth hue too.
+   Scoped to live preview — plain source mode keeps core's bare quote border. */
+.markdown-source-view.mod-cm6.is-live-preview .HyperMD-quote {
 	border: solid var(--blockquote-background-color);
 	border-width: 0 var(--size-4-2);
 }
 
-.markdown-source-view.mod-cm6
+.markdown-source-view.mod-cm6.is-live-preview
 	:is(
 		.HyperMD-quote:first-child,
 		.cm-sizer > div > div > *:not(.HyperMD-quote) + .HyperMD-quote
@@ -3799,7 +3845,7 @@ body.ds-quote-italic {
 	border-start-end-radius: var(--radius-s);
 }
 
-.markdown-source-view.mod-cm6
+.markdown-source-view.mod-cm6.is-live-preview
 	:is(
 		.HyperMD-quote:last-child,
 		.cm-sizer > div > div > .HyperMD-quote:has(+ *:not(.HyperMD-quote))
