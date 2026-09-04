@@ -29,6 +29,8 @@
       间距/字号滑杆曾因此失效）；正文字号改挂核心 --font-text-size；打印
       样式修正选择器优先级并补齐暗色地面与 wash 清零；嵌入边框补写逻辑
       属性名 --embed-border-start；--color-accent-rgb 随主色基准同步。
+   9. 标题色带：实时预览恢复椭圆顶角补偿（带间距的标题四角都是圆角，与
+      阅读视图一致），首个/紧邻的无间距标题保持普通圆角。
    ========================================================================= */
 
 /* @settings
@@ -1146,11 +1148,14 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
    and the scrollbar does not drift, which a margin would break) while
    `background-clip: padding-box` stops the tint from painting under it.
 
-   The tint keeps the element's plain --radius-m on all four corners. An
-   earlier version compensated the thick transparent border with an elliptical
-   top radius (the border-box radius minus the border width, per axis), but
-   some Chromium builds square the padding-box top corners off under that math
-   when the spacing is small, so the plain radius wins. */
+   The top corners carry an elliptical radius instead of the element's plain
+   --radius-m: the tint paints the padding box, which loses the border width
+   from each radius axis, so the top half-axis must add the gap back for the
+   tint's own corners to close at --radius-m. A plain radius would collapse
+   the padding box's top half-axis to zero under the gap and paint square
+   corners. Headings that shave the border (first in note, back to back) re-pin
+   the top corners to the plain radius — the compensation is unnecessary there,
+   and without the re-pin the padding box would inherit the huge half-axis. */
 body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 	.markdown-source-view.mod-cm6
 	.HyperMD-header {
@@ -1159,6 +1164,10 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 	padding-left: 0.6em;
 	border-top: var(--heading-spacing) solid transparent;
 	background-clip: padding-box;
+	border-top-left-radius: var(--radius-m)
+		calc(var(--radius-m) + var(--heading-spacing));
+	border-top-right-radius: var(--radius-m)
+		calc(var(--radius-m) + var(--heading-spacing));
 }
 
 /* Core zeroes the top padding of a heading that follows another heading
@@ -1188,6 +1197,8 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 	.markdown-source-view.mod-cm6
 	.cm-line.HyperMD-header:first-child {
 	border-top-width: 0;
+	border-top-left-radius: var(--radius-m);
+	border-top-right-radius: var(--radius-m);
 }
 
 body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
