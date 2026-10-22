@@ -185,7 +185,7 @@ settings:
     description.zh: 标题前的间距，单位 rem。位于色带之外，色带高度保持与文字一致。
     type: variable-number-slider
     default: 2.75
-    min: 1
+    min: 0
     max: 5
     step: 0.25
     format: rem
@@ -416,8 +416,8 @@ settings:
     id: ds-table-heading
     title: Table
     title.zh: 表格
-    description: Corner radius and table styles; zebra stripes live inside the style picker.
-    description.zh: 圆角与表格风格；斑马纹作为风格的子选项。
+    description: Corner radius, table style, cell typography and alignment; zebra stripes live inside the style picker.
+    description.zh: 圆角、风格、字号行高与对齐；斑马纹作为风格的子选项。
     type: heading
     level: 1
     collapsed: false
@@ -437,8 +437,8 @@ settings:
     id: ds-table-style
     title: Table Style
     title.zh: 表格风格
-    description: Outline treatment of tables in reading view. Zebra striping is a sub-style of Classic; the Finance style has no stripes.
-    description.zh: 阅读视图中表格的线条处理。斑马纹是经典风格的子选项，财报风格下不可用。
+    description: Outline treatment of tables in reading view. Zebra striping is a sub-style of Classic, Minimal and Notion; GitHub, Solid Header and Finance have none.
+    description.zh: 阅读视图中表格的线条处理。斑马纹是经典、极简、Notion 风格的子选项；GitHub、色带与财报风格不可用。
     type: class-select
     allow-empty: false
     default: ds-table-classic
@@ -451,6 +451,30 @@ settings:
         label: Classic + Zebra
         label.zh: 经典网格 · 斑马纹
         value: ds-table-zebra
+      -
+        label: Minimal
+        label.zh: 极简无线
+        value: ds-table-borderless
+      -
+        label: Minimal + Zebra
+        label.zh: 极简无线 · 斑马纹
+        value: ds-table-borderless-zebra
+      -
+        label: GitHub
+        label.zh: GitHub 风
+        value: ds-table-github
+      -
+        label: Notion
+        label.zh: Notion 风
+        value: ds-table-notion
+      -
+        label: Notion + Zebra
+        label.zh: Notion 风 · 斑马纹
+        value: ds-table-notion-zebra
+      -
+        label: Solid Header
+        label.zh: 表头色带
+        value: ds-table-solid-header
       -
         label: Finance
         label.zh: 财报线条
@@ -471,6 +495,37 @@ settings:
     description.zh: 表格列的最大宽度，单位 ch。填 0 表示不限制（Obsidian 默认行为）。仅阅读视图生效。
     type: variable-number
     default: 0
+  -
+    id: ds-table-cell-font
+    title: Cell Font Size
+    title.zh: 单元格字号
+    description: Font size of table cells relative to body text, in em. 1 matches body text; 0.9 is slightly smaller.
+    description.zh: 表格单元格相对正文的字号，单位 em。1 与正文一致，0.9 略小一号。
+    type: variable-number-slider
+    default: 1
+    min: 0.8
+    max: 1.2
+    step: 0.05
+    format: em
+  -
+    id: ds-table-line-scale
+    title: Cell Line Height Scale
+    title.zh: 单元格行高倍数
+    description: Multiplier applied on top of the body line height for table rows. Raise it (e.g. 1.1) if glyph tops get clipped while editing cells.
+    description.zh: 表格行高在正文行高基础上再乘的倍数。编辑单元格时汉字顶部被裁（剃头）就调大，比如 1.1。
+    type: variable-number-slider
+    default: 1
+    min: 1
+    max: 1.5
+    step: 0.05
+  -
+    id: ds-table-left
+    title: Left-align Tables
+    title.zh: 表格靠左
+    description: Align tables to the left in reading view instead of centered.
+    description.zh: 阅读视图中表格靠左排列，而不是居中。
+    type: class-toggle
+    default: false
   -
     id: ds-img-heading
     title: Images
@@ -2496,8 +2551,12 @@ body {
 	);
 
 	/* 表格行高对齐正文：核心默认用 --line-height-tight（较紧），
-	   改成正文行高变量，跟随「正文行高」滑杆，阅读视图与实时预览同时生效。 */
-	--table-line-height: var(--line-height-normal);
+	   改成正文行高变量，跟随「正文行高」滑杆，阅读视图与实时预览同时生效。
+	   行高倍数（无单位，Style Settings 不带 format）在其上再放大，
+	   解决编辑态汉字顶部被裁的「剃头」问题。 */
+	--table-line-height: calc(
+		var(--line-height-normal) * var(--ds-table-line-scale, 1)
+	);
 
 	--metadata-background: rgba(var(--sl-surface-rgb), 0.6);
 	--metadata-divider-color: var(--sl-border);
@@ -2528,10 +2587,109 @@ body {
 	line-height: var(--table-line-height);
 }
 
-/* Zebra striping is opt-in. Core paints odd rows from
-   --table-row-alt-background; it stays transparent while the toggle is off. */
-body.ds-table-zebra {
+/* 单元格字号相对正文（Style Settings，format: em 带单位，直接消费不进 calc），
+   默认 1em 等于核心默认。.markdown-rendered 同时覆盖阅读视图与实时预览
+   的已渲染表格，.cm-html-embed 覆盖嵌入的 HTML 表格。 */
+.markdown-rendered :is(th, td),
+.cm-html-embed :is(th, td) {
+	font-size: var(--ds-table-cell-font, 1em);
+}
+
+/* 表格靠左：阅读视图专用开关（编辑态表格保持 Obsidian 默认外观，
+   与上面 cm-table-widget 重置圆角的先例一致）。 */
+body.ds-table-left .markdown-preview-view table {
+	margin-left: initial;
+}
+
+/* Zebra striping is opt-in and rides Classic, Minimal and Notion. Core paints
+   odd rows from --table-row-alt-background; it stays transparent while the
+   picker points at a style without a zebra sub-option. */
+body.ds-table-zebra,
+body.ds-table-borderless-zebra,
+body.ds-table-notion-zebra {
 	--table-row-alt-background: rgba(var(--sl-surface-rgb), 0.55);
+}
+
+/* Minimal: no grid at all, only a strong rule under the header. Rows are
+   told apart by spacing (and zebra, if enabled). Follows the finance
+   structural pattern so live-preview editing behaves the same. */
+body.ds-table-borderless,
+body.ds-table-borderless-zebra {
+	--table-header-background: transparent;
+	--table-header-background-hover: transparent;
+}
+
+body.ds-table-borderless .markdown-rendered :is(th, td),
+body.ds-table-borderless-zebra .markdown-rendered :is(th, td) {
+	border: none;
+}
+
+body.ds-table-borderless .markdown-rendered thead th,
+body.ds-table-borderless-zebra .markdown-rendered thead th {
+	border-bottom: 2px solid color-mix(in srgb, var(--sl-text) 55%, transparent);
+}
+
+/* GitHub: outer frame, hairline row dividers, strong header rule; no vertical
+   lines and no fills. The table frame closes the last row, so its divider is
+   dropped to avoid a doubled line. */
+body.ds-table-github {
+	--table-header-background: transparent;
+	--table-header-background-hover: transparent;
+}
+
+body.ds-table-github .markdown-rendered table {
+	border: 1px solid var(--sl-border);
+}
+
+body.ds-table-github .markdown-rendered :is(th, td) {
+	border: none;
+	border-bottom: 1px solid var(--sl-border);
+}
+
+body.ds-table-github .markdown-rendered thead th {
+	border-bottom: 2px solid color-mix(in srgb, var(--sl-text) 55%, transparent);
+}
+
+body.ds-table-github .markdown-rendered tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* Notion: soft header fill and hairline row dividers, no outer frame and no
+   vertical lines. Header text drops back to plain ink, like the app. */
+body.ds-table-notion,
+body.ds-table-notion-zebra {
+	--table-header-background: rgba(var(--sl-surface-rgb), 0.55);
+	--table-header-background-hover: rgba(var(--sl-surface-rgb), 0.55);
+	--table-header-color: var(--sl-text);
+}
+
+body.ds-table-notion .markdown-rendered :is(th, td) {
+	border: none;
+	border-bottom: 1px solid var(--sl-border);
+}
+
+/* Solid header band: the fill is pulled toward black so the theme's white
+   fill-ink keeps contrast on every slider hue — yellow included (light mode
+   primary sits at 44% lightness, dark mode at 60%, and white on either fails
+   for warm hues; 65% over black keeps the worst case near 4:1). Hairline row
+   dividers close the body; the band respects the corner-radius setting. */
+body.ds-table-solid-header {
+	--table-header-background: color-mix(in srgb, var(--sl-primary) 65%, black);
+	--table-header-background-hover: color-mix(
+		in srgb,
+		var(--sl-primary) 65%,
+		black
+	);
+	--table-header-color: var(--text-on-accent);
+}
+
+body.ds-table-solid-header .markdown-rendered :is(th, td) {
+	border: none;
+	border-bottom: 1px solid var(--sl-border);
+}
+
+body.ds-table-solid-header .markdown-rendered tbody tr:last-child td {
+	border-bottom: none;
 }
 
 /* Financial-report tables: horizontal hairlines only, no grid, no fills. The
@@ -3693,6 +3851,14 @@ svg[id^="mermaid-"] .mindmap-node * {
 		--sl-wash: 0;
 		--sl-wash-strong: 0;
 		--sl-shadow-strength: 0;
+	}
+
+	/* The solid header band prints as white-on-white once the browser strips
+	   fills — fall back to ink on bare paper like every other style. */
+	body.ds-table-solid-header {
+		--table-header-background: transparent;
+		--table-header-background-hover: transparent;
+		--table-header-color: var(--sl-text);
 	}
 
 	/* A dark app theme still prints on white paper, so swap the ground tokens
