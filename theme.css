@@ -44,7 +44,7 @@ settings:
     title.zh: 色彩
     type: heading
     level: 1
-    collapsed: false
+    collapsed: true
   -
     id: ds-primary-hue
     title: Primary Hue
@@ -140,7 +140,7 @@ settings:
     title.zh: 布局
     type: heading
     level: 1
-    collapsed: false
+    collapsed: true
   -
     id: slate-show-view-header-title
     title: Show note title in the view header
@@ -171,6 +171,14 @@ settings:
     title.zh: 长文件名换行
     description: Wrap long file and folder names in the file explorer instead of truncating them.
     description.zh: 左侧文件目录树中长文件与文件夹名换行展示，而不是截断省略。
+    type: class-toggle
+    default: false
+  -
+    id: ds-bookmark-action
+    title: Bookmark Indicator
+    title.zh: 顶栏书签图标
+    description: Always show the native bookmark action in the view header — hollow when the note is not bookmarked, solid when it is; click opens Obsidian's own bookmark dialog. Needs the core Bookmarks plugin (on by default). Sits left of the edit toggle.
+    description.zh: 在视图顶栏常显自带的书签操作——未收藏时空心，已收藏时实心，点击弹出书签弹窗。需开启核心「书签」插件（默认开启）。位于编辑/阅读切换按钮左侧。
     type: class-toggle
     default: false
   -
@@ -229,7 +237,7 @@ settings:
     title.zh: 字体排印
     type: heading
     level: 1
-    collapsed: false
+    collapsed: true
   -
     id: slate-sans-body
     title: Sans-serif body
@@ -377,7 +385,7 @@ settings:
     description.zh: Maple 风格的引言卡片，配色跟随 Slate 深度色阶。
     type: heading
     level: 1
-    collapsed: false
+    collapsed: true
   -
     id: ds-quote-bar
     title: Quote Bar Width
@@ -447,7 +455,7 @@ settings:
     description.zh: 圆角、风格、字号行高与对齐；斑马纹作为风格的子选项。
     type: heading
     level: 1
-    collapsed: false
+    collapsed: true
   -
     id: ds-table-radius
     title: Table Corner Radius
@@ -569,7 +577,7 @@ settings:
     description.zh: 嵌入图片的可选边框、相框样式与悬浮阴影。
     type: heading
     level: 1
-    collapsed: false
+    collapsed: true
   -
     id: ds-img-border
     title: Image Border
@@ -620,7 +628,7 @@ settings:
     description.zh: 一组滑杆统一调节所有可开启的阴影——代码块、图片与引言卡片。
     type: heading
     level: 1
-    collapsed: false
+    collapsed: true
   -
     id: ds-shadow-size
     title: Shadow Size
@@ -652,7 +660,7 @@ settings:
     description.zh: 白板卡片配色自动跟随 Slate 光谱；边框与底色在 Obsidian 1.13+ 正常渲染。
     type: heading
     level: 1
-    collapsed: false
+    collapsed: true
   -
     id: ds-canvas-controls-hover
     title: Auto-hide Canvas Controls
@@ -1307,12 +1315,38 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 	margin-inline-start: -10px;
 }
 
-/* 标题悬浮阴影：独立开关，与任意标题风格叠加，走统一悬浮阴影令牌。
+/* 标题悬浮阴影：独立开关，与任意标题风格叠加。阴影色与色带同色系——
+   每级取自己深度色阶（--slate-depth-N，即色带颜色源）的色相，
+   几何（抬升/模糊/负扩展）沿用统一阴影令牌的滑杆。
    同色带的守卫条件——纯标题模式下没有可见色带，投影无意义。 */
 body:not(.slate-plain-headings):not(.slate-plain-heading-tint).ds-heading-float
 	.markdown-preview-view
 	:is(h1, h2, h3, h4, h5, h6) {
-	box-shadow: var(--ds-float-shadow);
+	box-shadow:
+		0 1px 2px
+			color-mix(in srgb, var(--heading-shadow-hue) 24%, transparent),
+		0 var(--ds-shadow-lift) var(--ds-shadow-blur)
+			calc(var(--ds-shadow-blur) * -0.36)
+			color-mix(in srgb, var(--heading-shadow-hue) 18%, transparent);
+}
+
+body .markdown-preview-view h1 {
+	--heading-shadow-hue: var(--slate-depth-1);
+}
+body .markdown-preview-view h2 {
+	--heading-shadow-hue: var(--slate-depth-2);
+}
+body .markdown-preview-view h3 {
+	--heading-shadow-hue: var(--slate-depth-3);
+}
+body .markdown-preview-view h4 {
+	--heading-shadow-hue: var(--slate-depth-4);
+}
+body .markdown-preview-view h5 {
+	--heading-shadow-hue: var(--slate-depth-5);
+}
+body .markdown-preview-view h6 {
+	--heading-shadow-hue: var(--slate-depth-6);
 }
 
 /* Fold arrows and the collapse indicator pick up the heading hue. */
@@ -2631,6 +2665,21 @@ body {
 	--metadata-input-text-color: var(--sl-text);
 	--metadata-sidebar-label-text-color: var(--sl-muted);
 	--metadata-property-radius: var(--radius-s);
+	/* 属性项悬浮/聚焦环：核心 hover 1px、focus 2px，粗细不一致；
+	   圆角也和常态行（--radius-s）不同（核心固定 6px），切换时跳变。
+	   统一为同粗细 1px 环、同常态圆角，只靠颜色区分状态。 */
+	--metadata-property-box-shadow-focus: 0 0 0 var(--border-width)
+		var(--background-modifier-border-focus);
+	--metadata-property-radius-hover: var(--metadata-property-radius);
+	--metadata-property-radius-focus: var(--metadata-property-radius);
+	/* 下拉展开时行处于 focus-within，核心给键/值单元格铺半透明彩底，
+	   与悬浮洗叠加后会出现整行刷蓝的异常。参考 Maple 的方案：
+	   状态底色改用不透明色——悬浮铺中性 surface 底，聚焦/选中铺
+	   面板同色（视觉隐形），互不叠加。 */
+	--metadata-property-background-hover: var(--background-primary-alt);
+	--metadata-property-background-active: var(--background-primary);
+	--metadata-label-background-active: var(--background-primary);
+	--metadata-input-background-active: var(--background-primary);
 }
 
 .markdown-rendered table {
@@ -2948,6 +2997,18 @@ body:not(.slate-show-breadcrumbs) .view-header-title-parent {
 
 body:not(.slate-show-inline-title) .inline-title {
 	display: none;
+}
+
+/* 顶栏书签图标：核心书签插件会给视图加 lucide-bookmark 操作按钮
+   （mod-bookmark），点击弹出自带书签弹窗，已收藏时挂 mod-bookmarked /
+   mod-filled（实心填充由核心的 mod-filled 规则负责，激活色也是）。
+   核心默认把未收藏状态藏起来（浏览器视图除外），这里反转为常显，
+   并用 flex order 钉在编辑/阅读切换按钮左侧。 */
+body.ds-bookmark-action
+	.workspace-leaf-content[data-type="markdown"]
+	.view-action.mod-bookmark {
+	display: flex;
+	order: -1;
 }
 
 .view-header-title-parent .view-header-breadcrumb {
