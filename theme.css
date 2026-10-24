@@ -166,6 +166,14 @@ settings:
     type: class-toggle
     default: false
   -
+    id: ds-file-tree-wrap
+    title: Wrap Long File Names
+    title.zh: 长文件名换行
+    description: Wrap long file and folder names in the file explorer instead of truncating them.
+    description.zh: 左侧文件目录树中长文件与文件夹名换行展示，而不是截断省略。
+    type: class-toggle
+    default: false
+  -
     id: ds-line-width
     title: Line Width
     title.zh: 行宽
@@ -189,6 +197,14 @@ settings:
     max: 5
     step: 0.25
     format: rem
+  -
+    id: ds-heading-float
+    title: Floating Headings
+    title.zh: 标题悬浮阴影
+    description: Give heading bands a soft drop shadow. Follows the shadow sliders; needs the heading tint on (default). Applies to reading view.
+    description.zh: 为标题色带添加柔和投影，跟随阴影大小与强度滑杆。需要标题色带开启（默认开）。作用于阅读视图。
+    type: class-toggle
+    default: false
   -
     id: ds-anim
     title: Animation
@@ -281,6 +297,17 @@ settings:
     max: 2
     step: 0.1
     format: rem
+  -
+    id: ds-text-soften
+    title: Soften Body Ink
+    title.zh: 正文墨色柔和度
+    description: Mix the body ink toward the background to ease full-screen contrast fatigue. 0 keeps the full-strength color; around 15 reads like soft off-black.
+    description.zh: 把正文墨色向背景色混合，缓解满屏高对比的视觉疲劳。0 为原墨色，15 左右即为柔和的深灰黑。
+    type: variable-number-slider
+    default: 0
+    min: 0
+    max: 30
+    step: 5
   -
     id: ds-code-size
     title: Code Font Size
@@ -524,6 +551,14 @@ settings:
     title.zh: 表格靠左
     description: Align tables to the left in reading view instead of centered.
     description.zh: 阅读视图中表格靠左排列，而不是居中。
+    type: class-toggle
+    default: false
+  -
+    id: ds-table-float
+    title: Floating Tables
+    title.zh: 表格悬浮阴影
+    description: Give tables a soft drop shadow so they hover slightly above the page. Follows the shadow size and strength sliders. Applies to reading view.
+    description.zh: 为表格添加柔和投影，呈现轻微悬浮感。跟随阴影大小与强度两个滑杆。作用于阅读视图。
     type: class-toggle
     default: false
   -
@@ -1001,7 +1036,13 @@ body {
    ------------------------------------------------------------------------ */
 
 body {
-	--text-normal: var(--sl-text);
+	/* 正文墨色可向背景柔和（Style Settings「正文墨色柔和度」，无单位
+	   百分比，默认 0 即原墨色）。只动 --text-normal，标题与弱化色不受影响。 */
+	--text-normal: color-mix(
+		in srgb,
+		var(--sl-text) calc(100% - var(--ds-text-soften, 0) * 1%),
+		var(--background-primary)
+	);
 	--text-muted: var(--sl-muted);
 	--text-faint: rgba(var(--sl-muted-rgb), 0.62);
 	/* Slate's textOnFillLight, identical in both modes. */
@@ -1259,8 +1300,19 @@ body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 body:not(.slate-plain-headings):not(.slate-plain-heading-tint)
 	.markdown-rendered
 	:is(h1, h2, h3, h4, h5, h6) {
-	padding: 0.12em 0.6em;
-	margin-inline-start: -0.6em;
+	/* 水平方向用固定 px：em 会随各级标题字号缩放，负外边距的凸出量
+	   就逐级递减，色带左边缘呈锯齿状。垂直方向保留 em，让文字
+	   在色带内随字号保持居中。 */
+	padding: 0.12em 10px;
+	margin-inline-start: -10px;
+}
+
+/* 标题悬浮阴影：独立开关，与任意标题风格叠加，走统一悬浮阴影令牌。
+   同色带的守卫条件——纯标题模式下没有可见色带，投影无意义。 */
+body:not(.slate-plain-headings):not(.slate-plain-heading-tint).ds-heading-float
+	.markdown-preview-view
+	:is(h1, h2, h3, h4, h5, h6) {
+	box-shadow: var(--ds-float-shadow);
 }
 
 /* Fold arrows and the collapse indicator pick up the heading hue. */
@@ -1347,7 +1399,9 @@ body.slate-plain-emphasis {
 	border-radius: var(--radius-m);
 	margin-block: var(--size-4-3);
 	padding-block: calc(var(--ds-quote-pad-y, 0.45) * 1em);
-	padding-inline: var(--size-4-4) var(--size-4-3);
+	/* start 侧用 4-5：竖条右缘（4-2 + 条宽）到文字只剩 4px，
+	   提到 4-5 后留白翻倍；引号样式在下面另行覆盖起点。 */
+	padding-inline: var(--size-4-5) var(--size-4-3);
 }
 
 .markdown-rendered blockquote::after {
@@ -2068,8 +2122,11 @@ body.ds-code-macos .markdown-source-view .code-block-flair {
 /* Unified floating-shadow tokens. Every opt-in shadow in the theme — code
    blocks, images, quote cards — draws from this one pair of sliders, so a
    single control pair tunes the whole elevation language. The wide layer's
-   offset and blur scale with the size slider; alpha multiplies the mode-based
-   strength so dark mode stays subtle. */
+   offset and blur scale with the size slider; a negative spread pulls it in
+   horizontally so the sides recede instead of reading as a hard vertical
+   band against the page (the pool below stays, alpha nudged up to pay for
+   the spread); alpha multiplies the mode-based strength so dark mode stays
+   subtle. */
 body {
 	--ds-shadow-blur: var(--ds-shadow-size, 22px);
 	--ds-shadow-lift: calc(var(--ds-shadow-size, 22px) * 0.36);
@@ -2077,7 +2134,8 @@ body {
 	--ds-float-shadow:
 		0 1px 2px rgba(var(--sl-shadow-color), calc(var(--ds-shadow-a) * 1.3)),
 		0 var(--ds-shadow-lift) var(--ds-shadow-blur)
-		rgba(var(--sl-shadow-color), calc(var(--ds-shadow-a) * 0.9));
+		calc(var(--ds-shadow-blur) * -0.36)
+		rgba(var(--sl-shadow-color), var(--ds-shadow-a));
 	--ds-card-shadow:
 		0 1px 2px rgba(var(--sl-shadow-color), calc(var(--ds-shadow-a) * 0.8)),
 		0 calc(var(--ds-shadow-blur) * 0.25) calc(var(--ds-shadow-blur) * 0.5)
@@ -2385,6 +2443,15 @@ body {
 	--nav-collapse-icon-color-collapsed: var(--sl-orange);
 }
 
+/* 长文件名换行：文件树文件名节点是 .nav-file-title-content /
+   .nav-folder-title-content，核心靠 --nav-item-white-space: pre（单行）
+   加 overflow + ellipsis 截断。这里用核心自己的旋钮换到 normal，
+   核心自带的 overflow-wrap: anywhere 接手无空格长名。
+   只作用文件目录树，不波及大纲、搜索等其他树。 */
+body.ds-file-tree-wrap .workspace-leaf-content[data-type="file-explorer"] {
+	--nav-item-white-space: normal;
+}
+
 /* Depth 1 through 6, one hue per level, sharing the ladder in section 16.
 
    Depth is counted in .nav-folder ancestors, not in container elements. The
@@ -2571,6 +2638,50 @@ body {
 	overflow: hidden;
 }
 
+/* 阅读视图真圆角：overflow:hidden 只能把网格线在圆角处齐齐切断，
+   留下缺口。改用 separate 边框模型，让四角单元格自己弯。
+   separate 不合并相邻边，单元格只保留右、下两条边才不会内线翻倍；
+   顶边由表头行补齐，左边由每行首格补齐。实时预览编辑态保持核心
+   collapse 模型不动（编辑器几何依赖它），外观重置见上。 */
+.markdown-preview-view table {
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.markdown-preview-view table :is(th, td) {
+	border: none;
+	border-right: var(--table-border-width) solid var(--table-border-color);
+	border-bottom: var(--table-border-width) solid var(--table-border-color);
+}
+
+.markdown-preview-view table thead th,
+.markdown-preview-view table:not(:has(thead)) tr:first-child :is(th, td) {
+	border-top: var(--table-border-width) solid var(--table-border-color);
+}
+
+.markdown-preview-view table :is(th, td):first-child {
+	border-left: var(--table-border-width) solid var(--table-border-color);
+}
+
+/* 四角单元格跟随「表格圆角」设置，边框沿弧线真正弯过去。 */
+.markdown-preview-view table thead th:first-child,
+.markdown-preview-view table:not(:has(thead)) tr:first-child :is(th, td):first-child {
+	border-top-left-radius: var(--ds-table-radius, 8px);
+}
+
+.markdown-preview-view table thead th:last-child,
+.markdown-preview-view table:not(:has(thead)) tr:first-child :is(th, td):last-child {
+	border-top-right-radius: var(--ds-table-radius, 8px);
+}
+
+.markdown-preview-view table tbody tr:last-child :is(td, th):first-child {
+	border-bottom-left-radius: var(--ds-table-radius, 8px);
+}
+
+.markdown-preview-view table tbody tr:last-child :is(td, th):last-child {
+	border-bottom-right-radius: var(--ds-table-radius, 8px);
+}
+
 /* 修复：实时预览的表格控件容器类名含 markdown-rendered，上面的
    overflow: hidden 会裁掉行/列拖拽手柄——手柄挂在单元格上并用负向
    inset 定位在表格外侧。在控件内恢复可见并取消圆角（编辑态表格
@@ -2599,6 +2710,12 @@ body {
    与上面 cm-table-widget 重置圆角的先例一致）。 */
 body.ds-table-left .markdown-preview-view table {
 	margin-left: initial;
+}
+
+/* 表格悬浮阴影：独立开关，与任意表格风格叠加，走统一悬浮阴影令牌
+   （与代码块、图片同一套，跟随阴影大小与强度滑杆）。 */
+body.ds-table-float .markdown-preview-view table {
+	box-shadow: var(--ds-float-shadow);
 }
 
 /* Zebra striping is opt-in and rides Classic, Minimal and Notion. Core paints
@@ -2715,6 +2832,8 @@ body.ds-table-finance .markdown-rendered table {
 body.ds-table-finance .markdown-rendered :is(th, td) {
 	border: none;
 	border-bottom: 1px solid var(--sl-border);
+	/* 上面的真圆角会给末行底线卷边，财报要直边，归零。 */
+	border-radius: 0;
 }
 
 body.ds-table-finance .markdown-rendered thead th {
@@ -3975,9 +4094,10 @@ body.ds-quote-border .markdown-rendered blockquote:hover {
 
 /* Big opening quote mark in place of the left bar (reading view). The mark
    takes the depth hue along with the bar it replaces, so nested quotes keep
-   the ladder. */
+   the ladder. The 3em text inset clears the 2.6em mark — at 1.7em the glyph
+   sat flush against the first character. */
 body.ds-quote-mark .markdown-rendered blockquote {
-	padding-inline-start: calc(var(--blockquote-border-thickness) + 1.7em);
+	padding-inline-start: calc(var(--blockquote-border-thickness) + 3em);
 }
 
 body.ds-quote-mark .markdown-rendered blockquote::before {
