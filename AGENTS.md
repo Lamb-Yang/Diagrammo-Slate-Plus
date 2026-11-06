@@ -99,6 +99,12 @@ Git 约定:提交信息用中文一行式(如「修复表格不展示控制手�
   两个都写(Minimal 主题同样双写)。
 - `--color-accent-rgb` 核心不会从 HSL 三元组派生,需按当前主色手动同步
   (见 `.theme-light` / `.theme-dark`)。
+- Callout:1.13+ 核心以**完整颜色**消费 `--callout-color`(内部
+  `color-mix(in oklch, …)` 派生背景/边框),旧的 RGB 三元组写法会失效;
+  默认 wash 为 10%,`--callout-border-opacity` 默认 0.25,整节点默认带
+  `--highlight-mix-blend-mode`(浅 darken/深 lighten)。验证方法:解包
+  `/Applications/Obsidian.app/Contents/Resources/obsidian.asar` 里的
+  `app.css` grep `callout`。风格分区见 theme.css 第 8 节(`ds-callout-*`)。
 - `--font-adaptive-normal` 是 Minimal 主题的变量,核心不消费;核心正文字号
   变量是 `--font-text-size`。
 - Style Settings 只写用户改动过的设置;`title.zh` / `description.zh` 是其

@@ -6,8 +6,8 @@
    A cool-gray slate ground with a confident corporate blue, a muted teal
    accent, and a nine-hue categorical spectrum tuned to a single perceived
    weight. This theme spends that spectrum aggressively: headings, tags,
-   folders, syntax, tasks and graph nodes all carry hue. Callouts stay on
-   Obsidian's own defaults.
+   folders, syntax, tasks and graph nodes all carry hue. Callout styling is
+   opt-in via a Style Settings preset; the default remains Obsidian's own.
 
    Plus 版本的改动：
    1. 修复 Canvas：Obsidian 1.13 起核心样式改用完整颜色 + color-mix 消费
@@ -31,6 +31,9 @@
       属性名 --embed-border-start；--color-accent-rgb 随主色基准同步。
    9. 标题色带：实时预览恢复椭圆顶角补偿（带间距的标题四角都是圆角，与
       阅读视图一致），首个/紧邻的无间距标题保持普通圆角。
+   10. 标注块（Callout）风格下拉：默认 / 左条 / 学术 / 线框 / 卡片 / Quarto
+       六种造型，颜色始终跟随各类型自带色，仅切换外框与背景；卡片复用统一
+       悬浮阴影令牌；内容区末行死空白（核心只在引言里清理）统一压掉。
    ========================================================================= */
 
 /* @settings
@@ -447,6 +450,49 @@ settings:
     description.zh: 引言文字使用斜体。
     type: class-toggle
     default: false
+  -
+    id: ds-callout-heading
+    title: Callout
+    title.zh: 标注块
+    description: Callout chrome presets. Colors always follow each callout type; the preset only changes the frame and ground.
+    description.zh: 标注块（Callout）的整体造型。颜色始终跟随各类型自带色，风格只改变外框与背景。
+    type: heading
+    level: 1
+    collapsed: true
+  -
+    id: ds-callout-style
+    title: Callout Style
+    title.zh: 标注块风格
+    description: Overall look of callouts in both views. Default is Obsidian's own treatment.
+    description.zh: 标注块的整体造型，阅读视图与实时预览同时生效。默认即 Obsidian 原生样式。
+    type: class-select
+    allow-empty: false
+    default: ds-callout-default
+    options:
+      -
+        label: Default
+        label.zh: 默认
+        value: ds-callout-default
+      -
+        label: Left bar
+        label.zh: 左条
+        value: ds-callout-leftbar
+      -
+        label: Academic
+        label.zh: 学术
+        value: ds-callout-academic
+      -
+        label: Outlined
+        label.zh: 线框
+        value: ds-callout-outlined
+      -
+        label: Card
+        label.zh: 卡片
+        value: ds-callout-card
+      -
+        label: Quarto
+        label.zh: Quarto 风
+        value: ds-callout-quarto
   -
     id: ds-table-heading
     title: Table
@@ -2223,10 +2269,139 @@ body.ds-img-float .markdown-source-view.mod-cm6 .internal-embed img {
 }
 
 /* ---------------------------------------------------------------------------
-   8. Callouts — intentionally untouched
-   Callout colors, borders, padding and title styles are left to Obsidian's
-   own defaults; the spectrum is spent on headings, tags and folders instead.
+   8. Callouts — style presets (ds-callout-style)
+   Core (1.13+) treats --callout-color as a full color and derives its own
+   chrome via color-mix in oklch (verified against app.css), so every preset
+   below re-derives its paint from that token — never rgba() on it, and no
+   hardcoded hues. The .callout node is identical in reading view and live
+   preview, so one selector covers both. Colors stay per-type; only the
+   chrome changes. ds-callout-default needs no rules of its own.
    ------------------------------------------------------------------------ */
+
+/* Left bar — a solid type-colored bar on the leading edge over a whisper of
+   the same hue. 7% sits under core's 10% wash so the bar, not the ground,
+   carries the color. */
+body.ds-callout-leftbar .callout {
+	--callout-border-width: 0 0 0 3px;
+	--callout-border-opacity: 1;
+	background-color: color-mix(in oklch, var(--callout-color) 7%, transparent);
+}
+
+/* Shared by every preset (and the default): core clears the trailing
+   margin inside blockquotes but not callouts, so the last paragraph's
+   --p-spacing printed as a dead band under the final line. */
+.callout-content > :last-child {
+	margin-bottom: 0;
+}
+
+/* Academic — print-flavored: transparent ground, a hairline in the type
+   hue, square corners, no icon, and a letter-spaced uppercase title like a
+   journal caption (text-transform is a no-op on CJK; the tracking alone
+   still reads as print). Fold chevron stays for function. */
+body.ds-callout-academic .callout {
+	--callout-border-width: 1px;
+	--callout-border-opacity: 0.25;
+	--callout-radius: 0;
+	--callout-title-size: 0.8em;
+	--callout-padding: var(--size-4-3);
+	background-color: transparent;
+}
+
+body.ds-callout-academic .callout-icon {
+	display: none;
+}
+
+body.ds-callout-academic .callout-title-inner {
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+/* Outlined — Minimal's legend treatment: transparent ground, hairline box,
+   and the title riding the top border on a patch of page ground, so the box
+   reads like a fieldset. The live-preview embed block gets a matching pad
+   and nested callouts extra top margin so the riding title never collides
+   with what sits above. */
+body.ds-callout-outlined .callout {
+	overflow: visible;
+	--callout-border-width: 1px;
+	--callout-border-opacity: 0.5;
+	--callout-blend-mode: normal;
+	background-color: transparent;
+}
+
+body.ds-callout-outlined .callout-title {
+	background-color: var(--background-primary);
+	margin-top: -24px;
+	width: fit-content;
+	padding: 0 0.5em;
+	margin-left: -0.75em;
+	letter-spacing: 0.05em;
+	font-variant-caps: all-small-caps;
+}
+
+body.ds-callout-outlined .cm-embed-block.cm-callout {
+	padding-top: 12px;
+}
+
+body.ds-callout-outlined .callout-content .callout {
+	margin-top: 18px;
+}
+
+/* Quarto — the look of Quarto's default callout (verified against the
+   bootstrap css quarto.org ships): a 5px type-colored leading edge, a
+   hairline on the other three sides, a 10% type-tinted header band under
+   normal ink (the icon alone stays in the type hue), and a 0.9rem
+   semibold title. The 85% header opacity is Quarto's own softening; the
+   tint mixes --background-primary so dark mode tints dark instead of
+   white. */
+body.ds-callout-quarto .callout {
+	--callout-radius: var(--radius-s);
+	--callout-title-size: 0.9rem;
+	--callout-title-color: var(--text-normal);
+	--callout-padding: 0;
+	background-color: transparent;
+	border-left: 5px solid var(--callout-color);
+	border-right: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+body.ds-callout-quarto .callout-title {
+	background-color: color-mix(
+		in srgb,
+		var(--callout-color) 10%,
+		var(--background-primary)
+	);
+	font-weight: 600;
+	opacity: 0.85;
+	padding: 0.35em 0.6em;
+}
+
+body.ds-callout-quarto .callout-icon {
+	color: var(--callout-color);
+}
+
+body.ds-callout-quarto .callout-content {
+	padding: 0.4em 0.6em 0.5em;
+}
+
+/* Card — a solid tinted ground over the page, a hairline in the type hue,
+   and the unified floating shadow so callouts join the elevation language
+   of code blocks, images and quote cards. Core blends the whole node with
+   --highlight-mix-blend-mode (darken/lighten); that would smear the shadow,
+   so the card opts out. Print kills it anyway via --sl-shadow-strength: 0. */
+body.ds-callout-card .callout {
+	--callout-blend-mode: normal;
+	--callout-border-width: 1px;
+	--callout-border-opacity: 0.2;
+	--callout-radius: var(--radius-m);
+	background-color: color-mix(
+		in oklch,
+		var(--callout-color) 7%,
+		var(--background-primary)
+	);
+	box-shadow: var(--ds-float-shadow);
+}
 
 /* ---------------------------------------------------------------------------
    9. Lists, tasks and checkboxes
