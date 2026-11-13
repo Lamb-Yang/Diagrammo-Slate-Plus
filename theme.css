@@ -4249,18 +4249,13 @@ svg[id^="mermaid-"] .mindmap-node * {
 	}
 }
 
-/* The theme adds transitions to bullets, icons and washes. Honor the system
-   setting rather than animating regardless. */
-@media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		transition-duration: 0.01ms;
-		animation-duration: 0.01ms;
-		animation-iteration-count: 1;
-		scroll-behavior: auto;
-	}
-}
+/* No global prefers-reduced-motion override here. Obsidian 1.15's file
+   explorer is a virtual list whose indent compensation reads each row's own
+   padding-inline-start; forcing every transition down to 0.01ms makes core
+   re-measure mid-animation and add another indent step on each expand or
+   collapse, so subfolders creep to the right. Core honors the setting for its
+   own animations, and the theme's remaining transitions are short
+   color/opacity fades. */
 
 /* ---------------------------------------------------------------------------
    22. Style Settings additions (Diagrammo Slate Plus)

@@ -111,3 +111,9 @@ Git 约定:提交信息用中文一行式(如「修复表格不展示控制手�
   多语言键;源码在 `mgmeyers/obsidian-style-settings`。
 - 文件内分区编号有错序(21 Mermaid 在 20 Print 之前),历史遗留,按注释
   标题找内容即可。
+- **不要加全局 `prefers-reduced-motion` 覆盖**(`*, *::before, *::after`
+  压 `transition-duration`)。Obsidian 1.15 的文件浏览器是虚拟列表,每行
+  标题的缩进靠 JS 读自身 `padding-inline-start` 补偿;把全局过渡压到
+  0.01ms 会打乱核心的测量时序,导致每次展开/收起都多加一级缩进,子目录
+  不断右移。该块已删除(1.4.0 之后的未发布修复)。核心自己处理
+  reduced-motion,主题仅剩的过渡是三类短促的颜色/透明度变化。
